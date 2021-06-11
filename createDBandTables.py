@@ -116,7 +116,7 @@ def showTables(q=None, **kwargs):
 
 def fromTenx():
     query = "SELECT * from applicant_information"
-    df = db_execute_fetch(q=query, dbName='tenxdb')
+    df = db_execute_fetch(query, rdf=True, dbName='tenxdb')
 
     return df
 
