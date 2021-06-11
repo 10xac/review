@@ -123,7 +123,7 @@ def fromTenx():
 def fromTenxToReview():
 
     appliInfo = fromTenx()
-    appliInfo.drop(["email", 'firstname', 'lastname', 'country', 'city', 'gender', 'name_of_instituition'
+    appliInfo.drop(["email", 'firstname', 'lastname', 'country', 'city', 'gender', 'name_of_instituition',
                     "previously_applied"], axis=1)
 
     appliInfo = appliInfo[['comfortability_speaking_english', 'commitment', 'self_funding', 'graduated',
@@ -135,12 +135,14 @@ def fromTenxToReview():
 
     conn, cur = DBConnect('review')
     for i, row in appliInfo.iterrows():
-        sqlQuery = ''' INSERT INTO applicant_information('comfortability_speaking_english', 'commitment', 'self_funding',
-                       'graduated', 'awareness_to_payback', 'renowned_idea', 'date_of_birth', 'education_level',
-                       'field_of_study', 'honours', 'github_profile', 'referee_name', 'mode_of_discovery',
-                       'work_experience', 'work_experience_details', 'python_proficiency', 'sql_proficiency',
-                       'statistics_proficiency', 'algebra_proficiency', 'data_science_project', 'data_science_profile',
-                       'self_taught', 'proceed_to_stage2')
+        # ('comfortability_speaking_english', 'commitment', 'self_funding',
+        #                'graduated', 'awareness_to_payback', 'renowned_idea', 'date_of_birth', 'education_level',
+        #                'field_of_study', 'honours', 'github_profile', 'referee_name', 'mode_of_discovery',
+        #                'work_experience', 'work_experience_details', 'python_proficiency', 'sql_proficiency',
+        #                'statistics_proficiency', 'algebra_proficiency', 'data_science_project', 'data_science_profile',
+        #                'self_taught', 'proceed_to_stage2')
+        
+        sqlQuery = ''' INSERT INTO applicant_information
                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             '''
 
