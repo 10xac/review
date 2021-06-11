@@ -79,7 +79,7 @@ def displayQuestionAndAnswer():
             pass
         with colB2:
             submitButton = st.form_submit_button(label="Submit")
-        
+
         if submitButton:
             st.write("This Applicant has been reviewed")
             query = """UPDATE applicant_information
