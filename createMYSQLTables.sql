@@ -1,16 +1,16 @@
 -- -----------------------------------------------------
 -- Table `applicant_information`
 -- -----------------------------------------------------
-
-CREATE TABLE IF NOT EXISTS `applicant_information` (
+DROP TABLE applicant_information;
+CREATE TABLE `applicant_information` (
   `applicant_id` INT NOT NULL AUTO_INCREMENT,
-  `comfortability_speaking_english` BOOLEAN NOT NULL,
-  `commitment` BOOLEAN NOT NULL,
-  `self_funding` BOOLEAN NOT NULL,
-  `graduated` BOOLEAN NOT NULL,
-  `awareness_to_payback` BOOLEAN NOT NULL,
+  `comfortability_speaking_english` TEXT NOT NULL,
+  `commitment` TEXT NOT NULL,
+  `self_funding` TEXT NOT NULL,
+  `graduated` TEXT NOT NULL,
+  `awareness_to_payback` TEXT NOT NULL,
   `renowned_idea` VARCHAR(2000) NOT NULL,
-  `date_of_birth` DATE NOT NULL,
+  `date_of_birth` TEXT NOT NULL,
   `education_level` VARCHAR(100) NOT NULL,
   `field_of_study` VARCHAR(100) NOT NULL,
   `honours` VARCHAR(500) DEFAULT NULL,

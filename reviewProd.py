@@ -6,7 +6,7 @@ import sessionState
 st. set_page_config(layout="wide")
 
 
-def getReviewerAppli(reviewerId):
+def getReviewerAppli():
     query = "SELECT * from applicant_information"
     df = createDBandTables.db_execute_fetch(query, rdf=True, dbName='review')
 
@@ -47,7 +47,7 @@ def displayQuestionAndAnswer():
     end_idx = (1 + session_state.page_number) * N
 
     row = applicant_info.iloc[start_idx:end_idx]
-    applicant_index = row["Unnamed: 0"].values[0] 
+    applicant_index = row["applicant_id"].values[0] 
 
     with st.form(key='review-form'):
         st.title("2021 Applicant review")
@@ -55,14 +55,16 @@ def displayQuestionAndAnswer():
             st.write(f"## {question.capitalize()}")
             answer = str(row[question].values[0])
 
-            if answer == 'nan':
+            if answer == 'None' or answer=='':
                 if question == 'accepted':
                     appQue = "Is this applicant accepted to week 0?"
                     st.markdown(f"<p style='padding:10px; background-color:#F0F2F6;color:#ed1f33;font-size:20px;border-radius:10px;'>{appQue}</p>", unsafe_allow_html=True)
                     acceptedValue = st.radio("", ("Yes", "No", "Maybe"))
+                    continue
 
                 noAns = "Applicant did not answer this question"
                 st.markdown(f"<p style='padding:10px; background-color:#F0F2F6;color:#ed1f33;font-size:16px;border-radius:10px;'>{noAns}</p>", unsafe_allow_html=True)
+
             else:
                 if question == 'accepted':
                     st.markdown(f"<p style='padding:10px; background-color:#F0F2F6;color:black;font-size:18px;border-radius:10px;'>{answer}</p>", unsafe_allow_html=True)
@@ -86,7 +88,7 @@ def displayQuestionAndAnswer():
                     SET accepted = (%s)
                     WHERE applicant_id = (%s)"""
 
-            cur.execute(query, (acceptedValue, applicant_index))
+            cur.execute(query, (acceptedValue, int(applicant_index)))
 
             conn.commit()
             cur.close()

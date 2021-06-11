@@ -108,9 +108,9 @@ def showTables(q=None, **kwargs):
 
     rdf = kwargs.pop('rdf', False)
 
-    res = db_execute_fetch(q, rdf=False, **kwargs)
-    res = [t[0] for t in res]
-    df = pd.DataFrame(res, columns=['Table Names'])
+    df = db_execute_fetch(q, rdf=True, **kwargs)
+    # res = [t[0] for t in res]
+   # df = pd.DataFrame(res, columns=['Table Names'])
 
     print(df)
 
@@ -156,3 +156,7 @@ def fromTenxToReview():
             print("Error: ", e)
             # Rollback in case there is any error
             conn.rollback()
+
+createTables('review')
+showTables(dbName='review')
+fromTenxToReview()
