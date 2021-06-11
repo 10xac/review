@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS `applicant_information` (
   `data_science_project` TEXT NOT NULL,
   `data_science_profile` VARCHAR(100) DEFAULT NULL,
   `self_taught` VARCHAR(5000) DEFAULT NULL,
-  `proceed_to_stage2` TEXT DEFAULT NULL;
+  `proceed_to_stage2` TEXT DEFAULT NULL,
   `reviewer_id` INT DEFAULT NULL,
   `accepted` VARCHAR(10) DEFAULT NULL
   PRIMARY KEY (`applicant_id`))
@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS `reviewer` (
   `reviewr_email` VARCHAR(255) NOT NULL,
   `firstname` TEXT NOT NULL,
   `lastname` TEXT NOT NULL
-  PRIMARY KEY (`applicant_id`))
+  PRIMARY KEY (`reviewer_id`))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci
