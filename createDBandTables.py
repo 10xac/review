@@ -124,7 +124,7 @@ def fromTenxToReview():
 
     appliInfo = fromTenx()
     appliInfo.drop(["email", 'firstname', 'lastname', 'country', 'city', 'gender', 'name_of_instituition'
-                    "previously_applied"])
+                    "previously_applied"], axis=1)
 
     appliInfo = appliInfo[['comfortability_speaking_english', 'commitment', 'self_funding', 'graduated',
                            'awareness_to_payback', 'renowned_idea', 'date_of_birth', 'education_level',
