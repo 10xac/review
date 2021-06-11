@@ -156,5 +156,3 @@ def fromTenxToReview():
             print("Error: ", e)
             # Rollback in case there is any error
             conn.rollback()
-
-fromTenxToReview()
