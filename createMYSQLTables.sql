@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS `applicant_information` (
   `self_taught` VARCHAR(5000) DEFAULT NULL,
   `proceed_to_stage2` TEXT DEFAULT NULL,
   `reviewer_id` INT DEFAULT NULL,
-  `accepted` VARCHAR(10) DEFAULT NULL
+  `accepted` VARCHAR(10) DEFAULT NULL,
   PRIMARY KEY (`applicant_id`))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8mb4
@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS `reviewer` (
   `reviewer_id` INT NOT NULL AUTO_INCREMENT,
   `reviewr_email` VARCHAR(255) NOT NULL,
   `firstname` TEXT NOT NULL,
-  `lastname` TEXT NOT NULL
+  `lastname` TEXT NOT NULL,
   PRIMARY KEY (`reviewer_id`))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8mb4
