@@ -114,5 +114,47 @@ def showTables(q=None, **kwargs):
 
     print(df)
 
-dbName = "review"
-showTables(dbName=dbName)
+def fromTenx():
+    query = "SELECT * from applicant_information"
+    df = db_execute_fetch(q=query, dbName='tenxdb')
+
+    return df
+
+def fromTenxToReview():
+
+    appliInfo = fromTenx()
+    appliInfo.drop(["email", 'firstname', 'lastname', 'country', 'city', 'gender', 'name_of_instituition'
+                    "previously_applied"])
+
+    appliInfo = appliInfo[['comfortability_speaking_english', 'commitment', 'self_funding', 'graduated',
+                           'awareness_to_payback', 'renowned_idea', 'date_of_birth', 'education_level',
+                           'field_of_study', 'honours', 'github_profile', 'referee_name', 'mode_of_discovery',
+                           'work_experience', 'work_experience_details', 'python_proficiency', 'sql_proficiency',
+                           'statistics_proficiency', 'algebra_proficiency', 'data_science_project',
+                           'data_science_profile', 'self_taught', 'proceed_to_stage2']]
+
+    conn, cur = DBConnect('review')
+    for i, row in appliInfo.iterrows():
+        sqlQuery = ''' INSERT INTO applicant_information('comfortability_speaking_english', 'commitment', 'self_funding',
+                       'graduated', 'awareness_to_payback', 'renowned_idea', 'date_of_birth', 'education_level',
+                       'field_of_study', 'honours', 'github_profile', 'referee_name', 'mode_of_discovery',
+                       'work_experience', 'work_experience_details', 'python_proficiency', 'sql_proficiency',
+                       'statistics_proficiency', 'algebra_proficiency', 'data_science_project', 'data_science_profile',
+                       'self_taught', 'proceed_to_stage2')
+                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            '''
+
+        data = (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11],
+                row[12], row[13], row[14], row[15], row[16], row[17], row[18], row[19], row[20], row[21], row[22])
+        try:
+            # Execute the SQL command
+            cur.execute(sqlQuery, data)
+            # Commit your changes in the database
+            conn.commit()
+            print("Data Inserted Successfully")
+        except Exception as e:
+            print("Error: ", e)
+            # Rollback in case there is any error
+            conn.rollback()
+
+fromTenxToReview()

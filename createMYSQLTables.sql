@@ -13,7 +13,6 @@ CREATE TABLE IF NOT EXISTS `applicant_information` (
   `date_of_birth` DATE NOT NULL,
   `education_level` VARCHAR(100) NOT NULL,
   `field_of_study` VARCHAR(100) NOT NULL,
-  `name_of_instituition` TEXT NOT NULL,
   `honours` VARCHAR(500) DEFAULT NULL,
   `github_profile` VARCHAR(100) NOT NULL,
   `referee_name` TEXT DEFAULT NULL,
