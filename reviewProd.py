@@ -1,16 +1,12 @@
 import streamlit as st
 import psycopg2
-import pprint
+import createDBandTables
 
 st. set_page_config(layout="wide")
 
-def DBConnect():
-    conn = psycopg2.connect(host="localhost", database="", user="", password="")
-    cur = conn.cursor()
-    return conn, cur
 
 def getReviewerAppli():
-    _, cur = DBConnect()
+    _, cur = createDBandTables.DBConnect()
     cur.execute('SELECT * FROM applicant_information WHERE review_id =2')
 
     answers = cur.fetchall()
@@ -18,7 +14,7 @@ def getReviewerAppli():
     return answers
 
 def getQuestionIds():
-    _, cur = DBConnect()
+    _, cur = createDBandTables.DBConnect()
     cur.execute("SELECT * FROM question WHERE application_form_id = 12")
     questions = cur.fetchall()
 
@@ -29,7 +25,7 @@ def getQuestionIds():
     return questionIds
 
 def getQuestions():
-    _, cur = DBConnect()
+    _, cur = createDBandTables.DBConnect()
     ids = getQuestionIds()
     Questions = []
 
@@ -41,7 +37,7 @@ def getQuestions():
     return Questions
 
 def displayQuestionAndAnswer():
-    conn, cur = DBConnect()
+    conn, cur = createDBandTables.DBConnect()
     questions = getQuestions()
     answers = getReviewerAppli()
 

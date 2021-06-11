@@ -1,3 +1,4 @@
+import datetime
 import boto3
 import base64
 import json
@@ -56,8 +57,8 @@ def showDbs():
 
     print(df)
 
-def createTables():
-    conn, cur = DBConnect()
+def createTables(dbName):
+    conn, cur = DBConnect(dbName)
     sqlFile = 'createMYSQLTables.sql'
     fd = open(sqlFile, 'r')
     readSqlFile = fd.read()
@@ -108,10 +109,10 @@ def showTables(q=None, **kwargs):
     rdf = kwargs.pop('rdf', False)
 
     res = db_execute_fetch(q, rdf=False, **kwargs)
-    res = [t[0].decode("utf-8") for t in res]
+    res = [t[0] for t in res]
     df = pd.DataFrame(res, columns=['Table Names'])
 
-    return df
+    print(df)
 
-createTables()
-showTables()
+dbName = "review"
+showTables(dbName=dbName)
