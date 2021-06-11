@@ -135,14 +135,12 @@ def fromTenxToReview():
 
     conn, cur = DBConnect('review')
     for i, row in appliInfo.iterrows():
-        # ('comfortability_speaking_english', 'commitment', 'self_funding',
-        #                'graduated', 'awareness_to_payback', 'renowned_idea', 'date_of_birth', 'education_level',
-        #                'field_of_study', 'honours', 'github_profile', 'referee_name', 'mode_of_discovery',
-        #                'work_experience', 'work_experience_details', 'python_proficiency', 'sql_proficiency',
-        #                'statistics_proficiency', 'algebra_proficiency', 'data_science_project', 'data_science_profile',
-        #                'self_taught', 'proceed_to_stage2')
-        
-        sqlQuery = ''' INSERT INTO applicant_information
+        sqlQuery = ''' INSERT INTO applicant_information(comfortability_speaking_english, commitment, self_funding,
+                       graduated, awareness_to_payback, renowned_idea, date_of_birth, education_level,
+                       field_of_study, honours, github_profile, referee_name, mode_of_discovery,
+                       work_experience, work_experience_details, python_proficiency, sql_proficiency,
+                       statistics_proficiency, algebra_proficiency, data_science_project, data_science_profile,
+                       self_taught, proceed_to_stage2)
                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             '''
 
