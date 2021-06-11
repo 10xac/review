@@ -1,50 +1,27 @@
 import streamlit as st
-import psycopg2
 import createDBandTables
 
 st. set_page_config(layout="wide")
 
 
-def getReviewerAppli():
-    _, cur = createDBandTables.DBConnect()
-    cur.execute('SELECT * FROM applicant_information WHERE review_id =2')
+def getReviewerAppli(reviewerId):
+    query = "SELECT * from applicant_information"
+    df = createDBandTables.db_execute_fetch(query, rdf=True, dbName='tenxdb')
 
-    answers = cur.fetchall()
+    return df
 
-    return answers
-
-def getQuestionIds():
-    _, cur = createDBandTables.DBConnect()
-    cur.execute("SELECT * FROM question WHERE application_form_id = 12")
-    questions = cur.fetchall()
-
-    questionIds = []
-    for question in questions:
-        questionIds.append(question[0])
-
-    return questionIds
-
-def getQuestions():
-    _, cur = createDBandTables.DBConnect()
-    ids = getQuestionIds()
-    Questions = []
-
-    for id in ids:
-        cur.execute(f"SELECT * FROM question_translation where question_id = {id}")
-        Question = cur.fetchall()
-        Questions.extend(Question)
-
-    return Questions
 
 def displayQuestionAndAnswer():
     conn, cur = createDBandTables.DBConnect()
     questions = getQuestions()
-    answers = getReviewerAppli()
+    applicant_info = getReviewerAppli()
 
-    answersId = []
-    questionsToExclude = [299, 300, 301, 308, 309, 311, 314, 318, 329]
-    for answer in answers:
-        answersId.append(answer[2])
+    shortQue = {}
+
+    with st.form(key='review-form'):
+        st.title("2021 Applicant review")
+
+        for 
 
     with st.form(key='review-form'):
         st.title(f"Applicant {answers[0][1]}'s review")
