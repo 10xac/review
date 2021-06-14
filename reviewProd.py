@@ -87,7 +87,7 @@ def displayQuestionAndAnswer():
     with prevCol:
         prevBut = st.button("Previous")
 
-        if prevBut("Previous"):
+        if prevBut:
 
             if session_state.page_number - 1 < 0:
                 session_state.page_number = 0
