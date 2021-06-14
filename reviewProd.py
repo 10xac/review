@@ -13,10 +13,18 @@ def getReviewerAppli(reviewerId):
 
     return df
 
+def getNotDoneReviews():
+    query = "SELECT * from applicant_information where accepted IS NULL"
+    df = createDBandTables.db_execute_fetch(query, rdf=True, dbName='review')
+
+    return len(df)
+
 def displayQuestionAndAnswer(reviewerId):
     applicant_info = getReviewerAppli(reviewerId)
     conn, cur = createDBandTables.DBConnect('review')
-    shortQue = {}
+    notDone = getNotDoneReviews()
+    remaining = len(applicant_info) - notDone
+    percentage = round(remaining / len(applicant_info)) * 100
     N = 1
     session_state = sessionState.get(page_number=0)
 
@@ -45,8 +53,7 @@ def displayQuestionAndAnswer(reviewerId):
     applicant_index = row["applicant_id"].values[0]
 
     with st.form(key='review-form'):
-        st.title("2021 Applicant review")
-        st.write(f"You have {len(applicant_info)} applicants to review")
+        st.write(f"You have reviewed {remaining} so far; {percentage}% done ")
         for question in row.columns:
             st.write(f"## {question.capitalize()}")
             answer = str(row[question].values[0])
@@ -69,6 +76,7 @@ def displayQuestionAndAnswer(reviewerId):
                     acceptedValue = st.radio("", ("Yes", "No", "Maybe"))
                     continue
 
+                answer = '\r\n'.join([x for x in answer.splitlines() if x.strip()])
                 st.markdown(f"<p style='padding:10px; background-color:#F0F2F6;color:black;font-size:18px;border-radius:10px;'>{answer}</p>", unsafe_allow_html=True)
 
         colB1, colB2 = st.beta_columns([1, .1])
@@ -91,6 +99,7 @@ def displayQuestionAndAnswer(reviewerId):
 
 
 def verifyEmail():
+    st.title("2021 Applicants Review")
     email = st.text_input("Enter Your 10academy Email below")
 
     if email:
