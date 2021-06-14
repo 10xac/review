@@ -2,6 +2,7 @@ import datetime
 import boto3
 import base64
 import json
+from google.protobuf import internal
 import pandas as pd
 import mysql.connector as mysql
 from mysql.connector import Error
@@ -131,6 +132,8 @@ def fromTenxToReview():
                            'statistics_proficiency', 'algebra_proficiency', 'data_science_project',
                            'data_science_profile', 'self_taught', 'proceed_to_stage2']]
 
+    interval = len(appliInfo) // 4
+
     conn, cur = DBConnect('review')
     for i, row in appliInfo.iterrows():
         sqlQuery = ''' INSERT INTO applicant_information(comfortability_speaking_english, commitment, self_funding,
@@ -138,12 +141,23 @@ def fromTenxToReview():
                        field_of_study, honours, github_profile, referee_name, mode_of_discovery,
                        work_experience, work_experience_details, python_proficiency, sql_proficiency,
                        statistics_proficiency, algebra_proficiency, data_science_project, data_science_profile,
-                       self_taught, proceed_to_stage2)
-                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                       self_taught, proceed_to_stage2, reviewer_id)
+                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             '''
 
-        data = (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11],
-                row[12], row[13], row[14], row[15], row[16], row[17], row[18], row[19], row[20], row[21], row[22])
+        if i <= interval:
+            data = (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11],
+                    row[12], row[13], row[14], row[15], row[16], row[17], row[18], row[19], row[20], row[21], row[22], 1)
+        elif i > interval and i <= 2 * interval:
+            data = (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11],
+                    row[12], row[13], row[14], row[15], row[16], row[17], row[18], row[19], row[20], row[21], row[22], 2)
+        elif i > 2 * interval and i <= 3 * interval:
+            data = (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11],
+                    row[12], row[13], row[14], row[15], row[16], row[17], row[18], row[19], row[20], row[21], row[22], 3)
+        elif i > 3 * interval:
+            data = (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11],
+                    row[12], row[13], row[14], row[15], row[16], row[17], row[18], row[19], row[20], row[21], row[22], 4)
+
         try:
             # Execute the SQL command
             cur.execute(sqlQuery, data)

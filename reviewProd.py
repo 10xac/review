@@ -7,14 +7,14 @@ import sessionState
 st. set_page_config(layout="wide")
 
 
-def getReviewerAppli():
-    query = "SELECT * from applicant_information"
+def getReviewerAppli(reviewerId):
+    query = f"SELECT * from applicant_information where reviewer_id = {reviewerId}"
     df = createDBandTables.db_execute_fetch(query, rdf=True, dbName='review')
 
     return df
 
-def displayQuestionAndAnswer():
-    applicant_info = getReviewerAppli()
+def displayQuestionAndAnswer(reviewerId):
+    applicant_info = getReviewerAppli(reviewerId)
     conn, cur = createDBandTables.DBConnect('review')
     shortQue = {}
     N = 1
@@ -46,6 +46,7 @@ def displayQuestionAndAnswer():
 
     with st.form(key='review-form'):
         st.title("2021 Applicant review")
+        st.write(f"You have {len(applicant_info)} applicants to review")
         for question in row.columns:
             st.write(f"## {question.capitalize()}")
             answer = str(row[question].values[0])
@@ -99,7 +100,8 @@ def verifyEmail():
             if len(res) == 0:
                 st.write("You're not a reviewer, Enter a valid email")
 
-            return True, email
+            with st.beta_container("Show Review Form"):
+                displayQuestionAndAnswer(res[0][0])
 
         except ClientError as e:
             st.write("You're not a reviewer, Enter a valid email")
