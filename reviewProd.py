@@ -4,7 +4,7 @@ import createDBandTables
 import sessionState
 
 st. set_page_config(layout="wide")
-
+session_state = sessionState.get(page_number=0)
 
 def getReviewerAppli():
     query = "SELECT * from applicant_information"
@@ -17,10 +17,9 @@ def displayQuestionAndAnswer():
     conn, cur = createDBandTables.DBConnect('review')
     shortQue = {}
     N = 1
-    session_state = sessionState.get(page_number=0)
 
     last_page = len(applicant_info) // N
-    st.write(str(session_state.page_number))
+    # st.write(str(session_state.page_number))
 
     prevCol, _, nextCol = st.beta_columns([1, 10, 1])
 
@@ -48,7 +47,7 @@ def displayQuestionAndAnswer():
     start_idx = session_state.page_number * N
     end_idx = (1 + session_state.page_number) * N
 
-    row = applicant_info.iloc[start_idx:end_idx]
+    row = applicant_info.iloc[start_idx : end_idx]
     applicant_index = row["applicant_id"].values[0]
 
     with st.form(key='review-form'):
