@@ -72,21 +72,27 @@ def displayQuestionAndAnswer():
             conn.commit()
             cur.close()
 
-    prev, _, next = st.beta_columns([1, 10, 1])
+    prevCol, _, nextCol = st.beta_columns([1, 10, 1])
 
-    if next.button("Next"):
+    with nextCol:
+        nextBut = st.button('Next')
 
-        if session_state.page_number + 1 > last_page:
-            session_state.page_number = last_page
-        else:
-            session_state.page_number += 1
+        if nextBut:
 
-    if prev.button("Previous"):
+            if session_state.page_number + 1 > last_page:
+                session_state.page_number = last_page
+            else:
+                session_state.page_number += 1
 
-        if session_state.page_number - 1 < 0:
-            session_state.page_number = 0
-        else:
-            session_state.page_number -= 1
+    with prevCol:
+        prevBut = st.button("Previous")
+
+        if prevBut("Previous"):
+
+            if session_state.page_number - 1 < 0:
+                session_state.page_number = 0
+            else:
+                session_state.page_number -= 1
 
     # with st.form(key='review-form'):
     #     st.title(f"Applicant {answers[0][1]}'s review")
