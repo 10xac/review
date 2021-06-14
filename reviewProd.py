@@ -26,7 +26,6 @@ def displayQuestionAndAnswer():
     end_idx = (1 + session_state.page_number) * N
 
     row = applicant_info.iloc[start_idx:end_idx]
-    st
     applicant_index = row["applicant_id"].values[0]
 
     with st.form(key='review-form'):
