@@ -15,11 +15,9 @@ def getReviewerAppli():
 def displayQuestionAndAnswer():
     applicant_info = getReviewerAppli()
     conn, cur = createDBandTables.DBConnect('review')
-
     shortQue = {}
     N = 1
     session_state = sessionState.get(page_number=0)
-    page_number = 0
 
     last_page = len(applicant_info) // N
 
@@ -27,21 +25,21 @@ def displayQuestionAndAnswer():
 
     if next.button("Next"):
 
-        if page_number + 1 > last_page:
-            page_number = 0
+        if session_state.page_number + 1 > last_page:
+            session_state.page_number = 0
         else:
-            page_number += 1
+            session_state.page_number += 1
 
     if prev.button("Previous"):
 
-        if page_number - 1 < 0:
-            page_number = last_page
+        if session_state.page_number - 1 < 0:
+            session_state.page_number = last_page
         else:
-            page_number -= 1
+            session_state.page_number -= 1
 
     # Get start and end indices of the next page of the dataframe
-    start_idx = page_number * N
-    end_idx = (1 + page_number) * N
+    start_idx = session_state.page_number * N
+    end_idx = (1 + session_state.page_number) * N
 
     row = applicant_info.iloc[start_idx:end_idx]
     applicant_index = row["applicant_id"].values[0]
