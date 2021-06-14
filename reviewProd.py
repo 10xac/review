@@ -26,6 +26,7 @@ def displayQuestionAndAnswer():
     end_idx = (1 + session_state.page_number) * N
 
     row = applicant_info.iloc[start_idx:end_idx]
+    st
     applicant_index = row["applicant_id"].values[0]
 
     with st.form(key='review-form'):
@@ -77,14 +78,14 @@ def displayQuestionAndAnswer():
     if next.button("Next"):
 
         if session_state.page_number + 1 > last_page:
-            session_state.page_number = 0
+            session_state.page_number = last_page
         else:
             session_state.page_number += 1
 
     if prev.button("Previous"):
 
         if session_state.page_number - 1 < 0:
-            session_state.page_number = last_page
+            session_state.page_number = 0
         else:
             session_state.page_number -= 1
 
