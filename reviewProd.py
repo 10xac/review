@@ -99,11 +99,12 @@ def verifyEmail():
             res = createDBandTables.db_execute_fetch(query, rdf=False, dbName='review')
             if len(res) == 0:
                 st.write("You're not a reviewer, Enter a valid email")
+
+            with st.beta_expander("Show Review Form"):
+                displayQuestionAndAnswer(res[0][0])
+
         except ClientError as e:
             st.write("You're not a reviewer, Enter a valid email")
             raise e
-
-    with st.beta_container("Show Review Form"):
-        displayQuestionAndAnswer(res[0][0])
 
 verifyEmail()
