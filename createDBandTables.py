@@ -149,7 +149,7 @@ def fromTenxToReview():
             cur.execute(sqlQuery, data)
             # Commit your changes in the database
             conn.commit()
-            print("Data Inserted Successfully")
+            print("applicants Inserted Successfully")
         except Exception as e:
             print("Error: ", e)
             # Rollback in case there is any error
@@ -162,5 +162,17 @@ def writeToReview():
                  ['kevin@10academy.org', 'Kevin', 'Karobia'],
                  ['yabebal@10academy.org', 'Yabebal', 'Tadesse']]
 
-    for reviwer in reviewers:
+    for reviewer in reviewers:
         sqlQuery = """INSERT INTO reviewer(reviewer_email, firstname, lastname) VALUES(%s, %s, %s)"""
+        data = (reviewer[0], reviewer[1], reviewer[2])
+
+        try:
+            # Execute the SQL command
+            cur.execute(sqlQuery, data)
+            # Commit your changes in the database
+            conn.commit()
+            print("reviewers Inserted Successfully")
+        except Exception as e:
+            print("Error: ", e)
+            # Rollback in case there is any error
+            conn.rollback()

@@ -1,10 +1,11 @@
+from botocore.exceptions import ClientError
 import streamlit as st
 import pandas as pd
 import createDBandTables
 import sessionState
 
 st. set_page_config(layout="wide")
-session_state = sessionState.get(page_number=0)
+
 
 def getReviewerAppli():
     query = "SELECT * from applicant_information"
@@ -17,15 +18,30 @@ def displayQuestionAndAnswer():
     conn, cur = createDBandTables.DBConnect('review')
     shortQue = {}
     N = 1
+    session_state = sessionState.get(page_number=0)
 
     last_page = len(applicant_info) // N
     # st.write(str(session_state.page_number))
+
+    prevCol, _, nextCol = st.beta_columns([1, 10, 1])
+
+    if nextCol.button('Next'):
+        if session_state.page_number + 1 > last_page:
+            session_state.page_number = last_page
+        else:
+            session_state.page_number += 1
+
+    if prevCol.button("Previous"):
+        if session_state.page_number - 1 < 0:
+            session_state.page_number = 0
+        else:
+            session_state.page_number -= 1
 
     # Get start and end indices of the next page of the dataframe
     start_idx = session_state.page_number * N
     end_idx = (1 + session_state.page_number) * N
 
-    row = applicant_info.iloc[start_idx : end_idx]
+    row = applicant_info.iloc[start_idx:end_idx]
     applicant_index = row["applicant_id"].values[0]
 
     with st.form(key='review-form'):
@@ -72,88 +88,17 @@ def displayQuestionAndAnswer():
             conn.commit()
             cur.close()
 
-    prevCol, _, nextCol = st.beta_columns([1, 10, 1])
 
-    with nextCol:
-        nextBut = st.button('Next')
+def verifyEmail():
+    email = st.text_input("Enter Your 10academy Email below")
 
-        if nextBut:
+    try:
+        query = "SELECT * fROM reviewer WHERE reviewer_email={email}"
+        createDBandTables.db_execute_fetch(query, rdf=False, dbname='review')
+        return True, email
 
-            if session_state.page_number + 1 > last_page:
-                session_state.page_number = last_page
-            else:
-                session_state.page_number += 1
+    except ClientError as e:
+        st.write("You're not a reviewer, Enter a valid email")
+        raise e
 
-    with prevCol:
-        prevBut = st.button("Previous")
-
-        if prevBut:
-
-            if session_state.page_number - 1 < 0:
-                session_state.page_number = 0
-            else:
-                session_state.page_number -= 1
-
-    # with st.form(key='review-form'):
-    #     st.title(f"Applicant {answers[0][1]}'s review")
-
-    #     for question in questions:
-    #         if question[1] in questionsToExclude:
-    #             continue
-
-    #         st.write(f"## {question[4].capitalize()}")
-    #         for answer in answers:
-    #             if answer[2] == question[1]:
-    #                 if question[1] == 332:
-    #                     st.markdown(f"<p style='padding-left:20px; background-color:#F0F2F6;color:black;font-size:16px;border-radius:10px;'>{answer[3]}</p>", unsafe_allow_html=True)
-
-    #                     chanQue = "Enter value below to Change this applicant's status"
-    #                     st.markdown(f"<p style='font-size:22px;border-radius:10px;'>{chanQue}</p>", unsafe_allow_html=True)
-    #                     acceptedValue = st.radio("",
-    #                                              ("Yes", "No", "Maybe"))
-    #                     continue
-
-    #                 st.markdown(f"<p style='padding:10px; background-color:#F0F2F6;color:black;font-size:16px;border-radius:10px;'>{answer[3]}</p>", unsafe_allow_html=True)
-
-    #         if question[1] not in answersId:
-    #             if question[1] == 332:
-    #                 appQue = "Is this applicant accepted to week 0?"
-    #                 st.markdown(f"<p style='padding:10px; background-color:#F0F2F6;color:#ed1f33;font-size:20px;border-radius:10px;'>{appQue}</p>", unsafe_allow_html=True)
-    #                 acceptedValue = st.radio(""
-    #                                          ("Yes", "No", "Maybe"))
-    #             else:
-    #                 noAns = "applicant did not answer this question"
-    #                 st.markdown(f"<p style='padding:10px; background-color:#F0F2F6;color:#ed1f33;font-size:16px;border-radius:10px;'>{noAns}</p>", unsafe_allow_html=True)
-
-    #     colB1, colB2 = st.beta_columns([1, .1])
-
-    #     with colB1:
-    #         pass
-    #     with colB2:
-    #         submitButton = st.form_submit_button(label="Submit")
-
-    #     if submitButton:
-    #         st.write(f"Applicant {answers[0][1]} has been reviewed")
-    #         if 332 in answersId:
-    #             query = """UPDATE answer
-    #                     SET value = (%s)
-    #                     WHERE response_id = (%s)
-    #                     AND question_id = (%s)"""
-
-    #             cur.execute(query, (acceptedValue, answers[0][1], 332))
-    #         else:
-    #             query = """INSERT INTO answer(response_id, question_id, value)
-    #                     VALUES (%s, %s, %s)"""
-
-    #             cur.execute(query, (answers[0][1], 332, acceptedValue))
-
-    #         conn.commit()
-    #         cur.close()
-
-    # col = st.beta_columns(16)
-    # with col[-2]:
-    #     st.button('Back')
-    # with col[-1]:
-    #     st.button('Next')
-
-displayQuestionAndAnswer()
+verifyEmail()
