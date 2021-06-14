@@ -109,8 +109,6 @@ def showTables(q=None, **kwargs):
     rdf = kwargs.pop('rdf', False)
 
     df = db_execute_fetch(q, rdf=True, **kwargs)
-    # res = [t[0] for t in res]
-   # df = pd.DataFrame(res, columns=['Table Names'])
 
     print(df)
 
@@ -157,6 +155,12 @@ def fromTenxToReview():
             # Rollback in case there is any error
             conn.rollback()
 
-createTables('review')
-showTables(dbName='review')
-fromTenxToReview()
+def writeToReview():
+    conn, cur = DBConnect('review')
+    reviewers = [['abubakar@10academy.org', 'Abubakar', 'Alaro'],
+                 ['arun@10academy.org', 'Arun', 'Sharma'],
+                 ['kevin@10academy.org', 'Kevin', 'Karobia'],
+                 ['yabebal@10academy.org', 'Yabebal', 'Tadesse']]
+
+    for reviwer in reviewers:
+        sqlQuery = """INSERT INTO reviewer(reviewer_email, firstname, lastname) VALUES(%s, %s, %s)"""

@@ -41,7 +41,7 @@ COMMENT = 'store all general applicant information required for review';
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `reviewer` (
   `reviewer_id` INT NOT NULL AUTO_INCREMENT,
-  `reviewr_email` VARCHAR(255) NOT NULL,
+  `reviewer_email` VARCHAR(255) NOT NULL,
   `firstname` TEXT NOT NULL,
   `lastname` TEXT NOT NULL,
   PRIMARY KEY (`reviewer_id`))

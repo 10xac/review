@@ -21,22 +21,6 @@ def displayQuestionAndAnswer():
 
     last_page = len(applicant_info) // N
 
-    prev, _, next = st.beta_columns([1, 10, 1])
-
-    if next.button("Next"):
-
-        if session_state.page_number + 1 > last_page:
-            session_state.page_number = 0
-        else:
-            session_state.page_number += 1
-
-    if prev.button("Previous"):
-
-        if session_state.page_number - 1 < 0:
-            session_state.page_number = last_page
-        else:
-            session_state.page_number -= 1
-
     # Get start and end indices of the next page of the dataframe
     start_idx = session_state.page_number * N
     end_idx = (1 + session_state.page_number) * N
@@ -87,6 +71,22 @@ def displayQuestionAndAnswer():
 
             conn.commit()
             cur.close()
+
+    prev, _, next = st.beta_columns([1, 10, 1])
+
+    if next.button("Next"):
+
+        if session_state.page_number + 1 > last_page:
+            session_state.page_number = 0
+        else:
+            session_state.page_number += 1
+
+    if prev.button("Previous"):
+
+        if session_state.page_number - 1 < 0:
+            session_state.page_number = last_page
+        else:
+            session_state.page_number -= 1
 
     # with st.form(key='review-form'):
     #     st.title(f"Applicant {answers[0][1]}'s review")
