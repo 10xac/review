@@ -94,12 +94,15 @@ def verifyEmail():
 
     if email:
         try:
-            query = f"SELECT * fROM reviewer WHERE reviewer_email = {email}"
-            createDBandTables.db_execute_fetch(query, rdf=False, dbName='review')
+            query = f"SELECT * fROM reviewer WHERE reviewer_email = '{email}'"
+            res = createDBandTables.db_execute_fetch(query, rdf=False, dbName='review')
+            if len(res) == 0:
+                st.write("You're not a reviewer, Enter a valid email")
+
             return True, email
 
         except ClientError as e:
             st.write("You're not a reviewer, Enter a valid email")
-        raise e
+            raise e
 
 verifyEmail()
