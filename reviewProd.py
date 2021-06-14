@@ -13,8 +13,8 @@ def getReviewerAppli(reviewerId):
 
     return df
 
-def getNotDoneReviews():
-    query = "SELECT * from applicant_information where accepted IS NULL"
+def getNotDoneReviews(reviewerId):
+    query = f"SELECT * from applicant_information where accepted IS NULL and reviewer_id = {reviewerId}"
     df = createDBandTables.db_execute_fetch(query, rdf=True, dbName='review')
 
     return len(df)
@@ -22,7 +22,7 @@ def getNotDoneReviews():
 def displayQuestionAndAnswer(reviewerId):
     applicant_info = getReviewerAppli(reviewerId)
     conn, cur = createDBandTables.DBConnect('review')
-    notDone = getNotDoneReviews()
+    notDone = getNotDoneReviews(reviewerId)
     remaining = len(applicant_info) - notDone
     percentage = round(remaining / len(applicant_info)) * 100
     N = 1
