@@ -31,8 +31,8 @@ def displayQuestionAndAnswer():
     row = applicant_info.iloc[start_idx:end_idx]
     applicant_index = row["applicant_id"].values[0]
 
-    while True:
-        with st.form(key='review-form'):
+    with st.form(key='review-form'):
+        while True:
             st.title("2021 Applicant review")
             for question in row.columns:
                 st.write(f"## {question.capitalize()}")
@@ -76,27 +76,27 @@ def displayQuestionAndAnswer():
                 conn.commit()
                 cur.close()
 
-        prev, _, next = st.beta_columns([1, 10, 1])
+            prev, _, next = st.beta_columns([1, 10, 1])
 
-        if next.button("Next"):
+            if next.button("Next"):
 
-            if session_state.page_number + 1 > last_page:
-                session_state.page_number = 0
-            else:
-                session_state.page_number += 1
+                if session_state.page_number + 1 > last_page:
+                    session_state.page_number = 0
+                else:
+                    session_state.page_number += 1
 
-        if prev.button("Previous"):
+            if prev.button("Previous"):
 
-            if session_state.page_number - 1 < 0:
-                session_state.page_number = last_page
-            else:
-                session_state.page_number -= 1
+                if session_state.page_number - 1 < 0:
+                    session_state.page_number = last_page
+                else:
+                    session_state.page_number -= 1
 
-        start_idx = session_state.page_number * N
-        end_idx = (1 + session_state.page_number) * N
+            start_idx = session_state.page_number * N
+            end_idx = (1 + session_state.page_number) * N
 
-        row = applicant_info.iloc[start_idx:end_idx]
-        applicant_index = row["applicant_id"].values[0]
+            row = applicant_info.iloc[start_idx:end_idx]
+            applicant_index = row["applicant_id"].values[0]
 
     # with st.form(key='review-form'):
     #     st.title(f"Applicant {answers[0][1]}'s review")
