@@ -20,6 +20,7 @@ def displayQuestionAndAnswer():
     session_state = sessionState.get(page_number=0)
 
     last_page = len(applicant_info) // N
+    st.write(str(session_state))
 
     # Get start and end indices of the next page of the dataframe
     start_idx = session_state.page_number * N
