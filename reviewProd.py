@@ -19,84 +19,76 @@ def displayQuestionAndAnswer():
     shortQue = {}
     N = 1
     session_state = sessionState.get(page_number=0)
+    page_number = 0
 
     last_page = len(applicant_info) // N
 
-    session_state.page_number = 0
+    prev, _, next = st.beta_columns([1, 10, 1])
+
+    if next.button("Next"):
+
+        if page_number + 1 > last_page:
+            page_number = 0
+        else:
+            page_number += 1
+
+    if prev.button("Previous"):
+
+        if page_number - 1 < 0:
+            page_number = last_page
+        else:
+            page_number -= 1
 
     # Get start and end indices of the next page of the dataframe
-    start_idx = session_state.page_number * N
-    end_idx = (1 + session_state.page_number) * N
+    start_idx = page_number * N
+    end_idx = (1 + page_number) * N
 
     row = applicant_info.iloc[start_idx:end_idx]
     applicant_index = row["applicant_id"].values[0]
 
-    while True:
-        with st.form(key='review-form' + str(start_idx)):
-            st.title("2021 Applicant review")
-            for question in row.columns:
-                st.write(f"## {question.capitalize()}")
-                answer = str(row[question].values[0])
+    with st.form(key='review-form'):
+        st.title("2021 Applicant review")
+        for question in row.columns:
+            st.write(f"## {question.capitalize()}")
+            answer = str(row[question].values[0])
 
-                if answer == 'None' or answer == '':
-                    if question == 'accepted':
-                        appQue = "Is this applicant accepted to week 0?"
-                        st.markdown(f"<p style='padding:10px;color:#ed1f33;font-size:20px;border-radius:10px;'>{appQue}</p>", unsafe_allow_html=True)
-                        acceptedValue = st.radio("", ("Yes", "No", "Maybe"))
-                        continue
+            if answer == 'None' or answer == '':
+                if question == 'accepted':
+                    appQue = "Is this applicant accepted to week 0?"
+                    st.markdown(f"<p style='padding:10px;color:#ed1f33;font-size:20px;border-radius:10px;'>{appQue}</p>", unsafe_allow_html=True)
+                    acceptedValue = st.radio("", ("Yes", "No", "Maybe"))
+                    continue
 
-                    noAns = "Applicant did not answer this question"
-                    st.markdown(f"<p style='padding:10px; background-color:#F0F2F6;color:#ed1f33;font-size:16px;border-radius:10px;'>{noAns}</p>", unsafe_allow_html=True)
+                noAns = "Applicant did not answer this question"
+                st.markdown(f"<p style='padding:10px; background-color:#F0F2F6;color:#ed1f33;font-size:16px;border-radius:10px;'>{noAns}</p>", unsafe_allow_html=True)
 
-                else:
-                    if question == 'accepted':
-                        st.markdown(f"<p style='padding:10px; background-color:#F0F2F6;color:black;font-size:18px;border-radius:10px;'>{answer}</p>", unsafe_allow_html=True)
-                        chanQue = "Change this applicant's status to"
-                        st.markdown(f"<p style='font-size:22px;border-radius:10px;'>{chanQue}</p>", unsafe_allow_html=True)
-                        acceptedValue = st.radio("", ("Yes", "No", "Maybe"))
-                        continue
-
+            else:
+                if question == 'accepted':
                     st.markdown(f"<p style='padding:10px; background-color:#F0F2F6;color:black;font-size:18px;border-radius:10px;'>{answer}</p>", unsafe_allow_html=True)
+                    chanQue = "Change this applicant's status to"
+                    st.markdown(f"<p style='font-size:22px;border-radius:10px;'>{chanQue}</p>", unsafe_allow_html=True)
+                    acceptedValue = st.radio("", ("Yes", "No", "Maybe"))
+                    continue
 
-            colB1, colB2 = st.beta_columns([1, .1])
+                st.markdown(f"<p style='padding:10px; background-color:#F0F2F6;color:black;font-size:18px;border-radius:10px;'>{answer}</p>", unsafe_allow_html=True)
 
-            with colB1:
-                pass
-            with colB2:
-                submitButton = st.form_submit_button(label="Submit")
+        colB1, colB2 = st.beta_columns([1, .1])
 
-            if submitButton:
-                st.write("This Applicant has been reviewed")
-                query = """UPDATE applicant_information
-                        SET accepted = (%s)
-                        WHERE applicant_id = (%s)"""
+        with colB1:
+            pass
+        with colB2:
+            submitButton = st.form_submit_button(label="Submit")
 
-                cur.execute(query, (acceptedValue, int(applicant_index)))
+        if submitButton:
+            st.write("This Applicant has been reviewed")
+            query = """UPDATE applicant_information
+                    SET accepted = (%s)
+                    WHERE applicant_id = (%s)"""
 
-                conn.commit()
-                cur.close()
+            cur.execute(query, (acceptedValue, int(applicant_index)))
 
-        prev, _, next = st.beta_columns([1, 10, 1])
-
-        if next.button("Next"):
-
-            if session_state.page_number + 1 > last_page:
-                session_state.page_number = 0
-            else:
-                session_state.page_number += 1
-
-        if prev.button("Previous"):
-
-            if session_state.page_number - 1 < 0:
-                session_state.page_number = last_page
-            else:
-                session_state.page_number -= 1
-
-        start_idx = session_state.page_number * N
-        end_idx = (1 + session_state.page_number) * N
-
-        row = applicant_info.iloc[start_idx:end_idx]
-        applicant_index = row["applicant_id"].values[0]
+            conn.commit()
+            cur.close()
 
     # with st.form(key='review-form'):
     #     st.title(f"Applicant {answers[0][1]}'s review")
