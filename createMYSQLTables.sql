@@ -39,7 +39,8 @@ COMMENT = 'store all general applicant information required for review';
 -- -----------------------------------------------------
 -- Table `REVIWER_INFO`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `reviewer` (
+DROP TABLE reviewer;
+CREATE TABLE `reviewer` (
   `reviewer_id` INT NOT NULL AUTO_INCREMENT,
   `reviewer_email` VARCHAR(255) NOT NULL,
   `firstname` TEXT NOT NULL,

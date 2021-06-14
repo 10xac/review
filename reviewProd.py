@@ -92,13 +92,14 @@ def displayQuestionAndAnswer():
 def verifyEmail():
     email = st.text_input("Enter Your 10academy Email below")
 
-    try:
-        query = "SELECT * fROM reviewer WHERE reviewer_email={email}"
-        createDBandTables.db_execute_fetch(query, rdf=False, dbname='review')
-        return True, email
+    if email:
+        try:
+            query = f"SELECT * fROM reviewer WHERE reviewer_email = {email}"
+            createDBandTables.db_execute_fetch(query, rdf=False, dbName='review')
+            return True, email
 
-    except ClientError as e:
-        st.write("You're not a reviewer, Enter a valid email")
+        except ClientError as e:
+            st.write("You're not a reviewer, Enter a valid email")
         raise e
 
 verifyEmail()
