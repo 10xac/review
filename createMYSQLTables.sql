@@ -29,7 +29,7 @@ CREATE TABLE `applicant_information` (
   `proceed_to_stage2` TEXT DEFAULT NULL,
   `test_score` INT NOT NULL,
   `2nd_reviewer_id` INT DEFAULT NULL,
-  '3rd_reviewer_id' INT DEFAULT NULL,
+  `3rd_reviewer_id` INT DEFAULT NULL,
   `accepted` VARCHAR(10) DEFAULT NULL,
   `2nd_reviewer_accepted` VARCHAR(10) DEFAULT NULL,
   `3rd_reviewer_accepted` VARCHAR(10) DEFAULT NULL,

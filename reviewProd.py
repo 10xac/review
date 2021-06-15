@@ -6,7 +6,6 @@ import sessionState
 
 st. set_page_config(layout="wide")
 
-
 def getReviewerAppli(reviewerId, reviewerGroup):
 
     query = "SELECT * from applicant_information"
@@ -74,8 +73,11 @@ def displayQuestionAndAnswer(reviewerId, reviewerGroup):
     with st.form(key='review-form'):
         st.write(f"You have reviewed {remaining} / {len(applicant_info)} so far; {percentage}% done ")
         for question in row.columns:
+            if question == "3rd_reviewer_id" or question == "2nd_reviewer_id":
+                continue
+
             if question == "2nd_reviewer_accepted" or question == "3rd_reviewer_accepted":
-                st.write("## Accepted 23")
+                st.write("## Accepted")
             else:
                 st.write(f"## {question.capitalize()}")
 
@@ -142,7 +144,7 @@ def verifyEmail():
                 st.write("You're not a reviewer, Enter a valid email")
 
             with st.beta_expander("Show Review Form"):
-                displayQuestionAndAnswer(res[0][0], res[0][3])
+                displayQuestionAndAnswer(res[0][0], res[0][4])
 
         except ClientError as e:
             st.write("You're not a reviewer, Enter a valid email")

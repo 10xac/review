@@ -115,7 +115,7 @@ def showTables(q=None, **kwargs):
     print(df)
 
 def fromTenx():
-    query = "SELECT * from applicant_information where test_score >= 20"
+    query = "SELECT * from applicant_information"
     df = db_execute_fetch(query, rdf=True, dbName='tenxdb')
 
     return df
@@ -218,3 +218,7 @@ def writeToReview():
             print("Error: ", e)
             # Rollback in case there is any error
             conn.rollback()
+
+# createTables()
+# writeToReview()
+# fromTenxToReview()
