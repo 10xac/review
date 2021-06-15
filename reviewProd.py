@@ -7,22 +7,41 @@ import sessionState
 st. set_page_config(layout="wide")
 
 
-def getReviewerAppli(reviewerId):
-    query = f"SELECT * from applicant_information where reviewer_id = {reviewerId}"
+def getReviewerAppli(reviewerId, reviewerGroup):
+
+    query = "SELECT * from applicant_information"
     df = createDBandTables.db_execute_fetch(query, rdf=True, dbName='review')
+    df.drop(['2nd_reviewer_id', '2nd_reviewer_accepted', '3rd_reviewer_id', '3rd_reviewer_accepted'], inplace=True, axis=1)
+
+    if reviewerGroup == 2:
+        query = f"SELECT * from applicant_information where 2nd_reviewer_id = {reviewerId}"
+        df = createDBandTables.db_execute_fetch(query, rdf=True, dbName='review')
+        df.drop(['3rd_reviewer_id', 'accepted', '3rd_reviewer_accepted'], inplace=True, axis=1)
+
+    elif reviewerGroup == 3:
+        query = f"SELECT * from applicant_information where 3rd_reviewer_id = {reviewerId}"
+        df = createDBandTables.db_execute_fetch(query, rdf=True, dbName='review')
+        df.drop(['2nd_reviewer_id', 'accepted', '2nd_reviewer_accepted'], inplace=True, axis=1)
 
     return df
 
-def getNotDoneReviews(reviewerId):
-    query = f"SELECT * from applicant_information where accepted IS NULL and reviewer_id = {reviewerId}"
+def getNotDoneReviews(reviewerId, reviewerGroup):
+
+    query = "SELECT * from applicant_information where accepted IS NULL"
+    if reviewerGroup == 2:
+        query = f"SELECT * from applicant_information where 2nd_reviewer_accepted IS NULL and 2nd_reviewer_id = {reviewerId}"
+    elif reviewerGroup == 3:
+        query = f"SELECT * from applicant_information where 3rd_reviewer_accepted IS NULL and 3rd_reviewer_id = {reviewerId}"
+
     df = createDBandTables.db_execute_fetch(query, rdf=True, dbName='review')
 
     return len(df)
 
-def displayQuestionAndAnswer(reviewerId):
-    applicant_info = getReviewerAppli(reviewerId)
+def displayQuestionAndAnswer(reviewerId, reviewerGroup):
+
     conn, cur = createDBandTables.DBConnect('review')
-    notDone = getNotDoneReviews(reviewerId)
+    applicant_info = getReviewerAppli(reviewerId, reviewerGroup)
+    notDone = getNotDoneReviews(reviewerId, reviewerGroup)
     remaining = len(applicant_info) - notDone
     percentage = round(remaining / len(applicant_info)) * 100
     N = 1
@@ -53,13 +72,17 @@ def displayQuestionAndAnswer(reviewerId):
     applicant_index = row["applicant_id"].values[0]
 
     with st.form(key='review-form'):
-        st.write(f"You have reviewed {remaining} so far; {percentage}% done ")
+        st.write(f"You have reviewed {remaining} / {len(applicant_info)} so far; {percentage}% done ")
         for question in row.columns:
-            st.write(f"## {question.capitalize()}")
+            if question == "2nd_reviewer_accepted" or question == "3rd_reviewer_accepted":
+                st.write("## Accepted 23")
+            else:
+                st.write(f"## {question.capitalize()}")
+
             answer = str(row[question].values[0])
 
             if answer == 'None' or answer == '':
-                if question == 'accepted':
+                if question == 'accepted' or question == "2nd_reviewer_accepted" or question == "3rd_reviewer_accepted":
                     appQue = "Is this applicant accepted to week 0?"
                     st.markdown(f"<p style='padding:10px;color:#ed1f33;font-size:20px;border-radius:10px;'>{appQue}</p>", unsafe_allow_html=True)
                     acceptedValue = st.radio("", ("Yes", "No", "Maybe"))
@@ -69,7 +92,7 @@ def displayQuestionAndAnswer(reviewerId):
                 st.markdown(f"<p style='padding:10px; background-color:#F0F2F6;color:#ed1f33;font-size:16px;border-radius:10px;'>{noAns}</p>", unsafe_allow_html=True)
 
             else:
-                if question == 'accepted':
+                if question == 'accepted' or question == "2nd_reviewer_accepted" or question == "3rd_reviewer_accepted":
                     st.markdown(f"<p style='padding:10px; background-color:#F0F2F6;color:black;font-size:18px;border-radius:10px;'>{answer}</p>", unsafe_allow_html=True)
                     chanQue = "Change this applicant's status to"
                     st.markdown(f"<p style='font-size:22px;border-radius:10px;'>{chanQue}</p>", unsafe_allow_html=True)
@@ -92,6 +115,15 @@ def displayQuestionAndAnswer(reviewerId):
                     SET accepted = (%s)
                     WHERE applicant_id = (%s)"""
 
+            if reviewerGroup == 2:
+                query = """UPDATE applicant_information
+                    SET 2nd_reviewer_accepted = (%s)
+                    WHERE applicant_id = (%s)"""
+            elif reviewerGroup == 3:
+                query = """UPDATE applicant_information
+                    SET 3rd_reviewer_accepted = (%s)
+                    WHERE applicant_id = (%s)"""
+
             cur.execute(query, (acceptedValue, int(applicant_index)))
 
             conn.commit()
@@ -110,7 +142,7 @@ def verifyEmail():
                 st.write("You're not a reviewer, Enter a valid email")
 
             with st.beta_expander("Show Review Form"):
-                displayQuestionAndAnswer(res[0][0])
+                displayQuestionAndAnswer(res[0][0], res[0][3])
 
         except ClientError as e:
             st.write("You're not a reviewer, Enter a valid email")

@@ -27,8 +27,12 @@ CREATE TABLE `applicant_information` (
   `data_science_profile` VARCHAR(100) DEFAULT NULL,
   `self_taught` VARCHAR(5000) DEFAULT NULL,
   `proceed_to_stage2` TEXT DEFAULT NULL,
-  `reviewer_id` INT DEFAULT NULL,
+  `test_score` INT NOT NULL,
+  `2nd_reviewer_id` INT DEFAULT NULL,
+  '3rd_reviewer_id' INT DEFAULT NULL,
   `accepted` VARCHAR(10) DEFAULT NULL,
+  `2nd_reviewer_accepted` VARCHAR(10) DEFAULT NULL,
+  `3rd_reviewer_accepted` VARCHAR(10) DEFAULT NULL,
   PRIMARY KEY (`applicant_id`))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8mb4
@@ -45,6 +49,7 @@ CREATE TABLE `reviewer` (
   `reviewer_email` VARCHAR(255) NOT NULL,
   `firstname` TEXT NOT NULL,
   `lastname` TEXT NOT NULL,
+  `reviewer_group` INT NOT NULL,
   PRIMARY KEY (`reviewer_id`))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8mb4

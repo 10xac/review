@@ -1,4 +1,5 @@
 import datetime
+import re
 import boto3
 import base64
 import json
@@ -114,16 +115,23 @@ def showTables(q=None, **kwargs):
     print(df)
 
 def fromTenx():
-    query = "SELECT * from applicant_information"
+    query = "SELECT * from applicant_information where test_score >= 20"
     df = db_execute_fetch(query, rdf=True, dbName='tenxdb')
 
     return df
+
+def getReviewers(reviewerGroup):
+    _, cur = DBConnect('review')
+    cur.execute(f"SELECT * from reviewer where reviewer_group = {reviewerGroup}")
+    res = cur.fetchall()
+
+    return res
 
 def fromTenxToReview():
 
     appliInfo = fromTenx()
     appliInfo.drop(["email", 'firstname', 'lastname', 'country', 'city', 'gender', 'name_of_instituition',
-                    "previously_applied"], axis=1)
+                    "previously_applied"], inplace=True, axis=1)
 
     appliInfo = appliInfo[['comfortability_speaking_english', 'commitment', 'self_funding', 'graduated',
                            'awareness_to_payback', 'renowned_idea', 'date_of_birth', 'education_level',
@@ -132,7 +140,13 @@ def fromTenxToReview():
                            'statistics_proficiency', 'algebra_proficiency', 'data_science_project',
                            'data_science_profile', 'self_taught', 'proceed_to_stage2']]
 
-    interval = len(appliInfo) // 4
+    reviewersTwo = getReviewers(2)
+    intervalTwo = len(appliInfo) // len(reviewersTwo)
+    reviewTwoId = [reviewerTwo[0] for reviewerTwo in reviewersTwo]
+
+    reviewersThree = getReviewers(3)
+    intervalThree = len(appliInfo) // len(reviewersThree)
+    reviewThreeId = [reviewerThree[0] for reviewerThree in reviewersThree]
 
     conn, cur = DBConnect('review')
     for i, row in appliInfo.iterrows():
@@ -141,22 +155,29 @@ def fromTenxToReview():
                        field_of_study, honours, github_profile, referee_name, mode_of_discovery,
                        work_experience, work_experience_details, python_proficiency, sql_proficiency,
                        statistics_proficiency, algebra_proficiency, data_science_project, data_science_profile,
-                       self_taught, proceed_to_stage2, reviewer_id)
-                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                       self_taught, proceed_to_stage2, 2nd_reviewer_id, 3rd_reviewer_id)
+                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             '''
 
-        if i <= interval:
-            data = (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11],
-                    row[12], row[13], row[14], row[15], row[16], row[17], row[18], row[19], row[20], row[21], row[22], 1)
-        elif i > interval and i <= 2 * interval:
-            data = (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11],
-                    row[12], row[13], row[14], row[15], row[16], row[17], row[18], row[19], row[20], row[21], row[22], 2)
-        elif i > 2 * interval and i <= 3 * interval:
-            data = (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11],
-                    row[12], row[13], row[14], row[15], row[16], row[17], row[18], row[19], row[20], row[21], row[22], 3)
-        elif i > 3 * interval:
-            data = (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11],
-                    row[12], row[13], row[14], row[15], row[16], row[17], row[18], row[19], row[20], row[21], row[22], 4)
+        if i <= intervalTwo:
+            secondReviewerId = reviewTwoId[0]
+        elif i > intervalTwo and i <= 2 * intervalTwo:
+            secondReviewerId = reviewTwoId[1]
+        elif i > 2 * intervalTwo and i <= 3 * intervalTwo:
+            secondReviewerId = reviewTwoId[2]
+        elif i > 3 * intervalTwo:
+            secondReviewerId = reviewTwoId[3]
+
+        if i <= intervalThree:
+            thirdReviewerId = reviewThreeId[0]
+        elif i > intervalThree and i <= 2 * intervalThree:
+            thirdReviewerId = reviewThreeId[1]
+        elif i > 2 * intervalThree:
+            thirdReviewerId = reviewThreeId[2]
+
+        data = (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11],
+                row[12], row[13], row[14], row[15], row[16], row[17], row[18], row[19], row[20], row[21], row[22],
+                secondReviewerId, thirdReviewerId)
 
         try:
             # Execute the SQL command
@@ -171,14 +192,21 @@ def fromTenxToReview():
 
 def writeToReview():
     conn, cur = DBConnect('review')
-    reviewers = [['abubakar@10academy.org', 'Abubakar', 'Alaro'],
-                 ['arun@10academy.org', 'Arun', 'Sharma'],
-                 ['kevin@10academy.org', 'Kevin', 'Karobia'],
-                 ['yabebal@10academy.org', 'Yabebal', 'Tadesse']]
+    reviewers = [['kevin@10academy.org', 'Kevin', 'Karobia', 0],
+                 ['yabebal@10academy.org', 'Yabebal', 'Tadesse', 0],
+                 ['arun@10academy.org', 'Arun', 'Sharma', 1],
+                 ['abubakar@10academy.org', 'Abubakar', 'Alaro', 2],
+                 ['mahlet@10academy.org', 'Mahlet', 'Taye', 2],
+                 ['lawal@10academy.org', 'Lawal', 'Ogunfowora', 2],
+                 ['usman@10academy.org', 'Usman', 'Abdul-Ganiy', 2],
+                 ['yabiayele@10academy.org', 'Yabi', 'Ayele', 3],
+                 ['cindy@10academy.org', 'Cindy', 'Adem', 3],
+                 ['Yati@10academy.org', 'Yati', 'Yati', 3]
+                 ]
 
     for reviewer in reviewers:
-        sqlQuery = """INSERT INTO reviewer(reviewer_email, firstname, lastname) VALUES(%s, %s, %s)"""
-        data = (reviewer[0], reviewer[1], reviewer[2])
+        sqlQuery = """INSERT INTO reviewer(reviewer_email, firstname, lastname, reviewer_group) VALUES(%s, %s, %s, %s)"""
+        data = (reviewer[0], reviewer[1], reviewer[2], reviewer[3])
 
         try:
             # Execute the SQL command
