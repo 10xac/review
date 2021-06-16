@@ -7,7 +7,7 @@ RUN pip3 install -r requirements.txt
 
 COPY . .
 
-EXPOSE 8501
+EXPOSE 80
 
 RUN mkdir -p /root/.streamlit
 
@@ -24,4 +24,7 @@ secondaryBackgroundColor = \"#ffffff\"\n\
 textColor = \"#000000\"\n\
 " > /root/.streamlit/config.toml'
 
-CMD ["streamlit", "run", "reviewProd.py"]
+CMD ["streamlit", "run", "reviewProd.py"\
+     "--server.port", "80", \
+     "--browser.serverAddress", "0.0.0.0", \
+     "--browser.serverPort", "443"]
