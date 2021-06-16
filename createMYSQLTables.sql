@@ -28,6 +28,7 @@ CREATE TABLE `applicant_information` (
   `self_taught` VARCHAR(5000) DEFAULT NULL,
   `proceed_to_stage2` TEXT DEFAULT NULL,
   `test_score` INT NOT NULL,
+  `test_status` VARCHAR(10) NOT NOT NULL,
   `2nd_reviewer_id` INT DEFAULT NULL,
   `3rd_reviewer_id` INT DEFAULT NULL,
   `accepted` VARCHAR(10) DEFAULT NULL,
