@@ -138,7 +138,7 @@ def fromTenxToReview():
                            'field_of_study', 'honours', 'github_profile', 'referee_name', 'mode_of_discovery',
                            'work_experience', 'work_experience_details', 'python_proficiency', 'sql_proficiency',
                            'statistics_proficiency', 'algebra_proficiency', 'data_science_project',
-                           'data_science_profile', 'self_taught', 'proceed_to_stage2', 'test_score']]
+                           'data_science_profile', 'self_taught', 'proceed_to_stage2', 'test_score', 'test_status']]
 
     reviewersTwo = getReviewers(2)
     intervalTwo = len(appliInfo) // len(reviewersTwo)
@@ -155,8 +155,8 @@ def fromTenxToReview():
                        field_of_study, honours, github_profile, referee_name, mode_of_discovery,
                        work_experience, work_experience_details, python_proficiency, sql_proficiency,
                        statistics_proficiency, algebra_proficiency, data_science_project, data_science_profile,
-                       self_taught, proceed_to_stage2, test_score, 2nd_reviewer_id, 3rd_reviewer_id)
-                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                       self_taught, proceed_to_stage2, test_score, test_status, 2nd_reviewer_id, 3rd_reviewer_id)
+                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             '''
 
         if i <= intervalTwo:
@@ -177,7 +177,7 @@ def fromTenxToReview():
 
         data = (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11],
                 row[12], row[13], row[14], row[15], row[16], row[17], row[18], row[19], row[20], row[21], row[22],
-                row[23], secondReviewerId, thirdReviewerId)
+                row[23], row[24], secondReviewerId, thirdReviewerId)
 
         try:
             # Execute the SQL command
