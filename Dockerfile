@@ -7,7 +7,7 @@ RUN pip3 install -r requirements.txt
 
 COPY . .
 
-EXPOSE 8501
+EXPOSE 80
 
 RUN mkdir -p /root/.streamlit
 
@@ -18,4 +18,8 @@ email = \"\"\n\
 
 RUN bash -c 'mv ./config.toml /root/.streamlit/config.toml'
 
-CMD streamlit run reviewProd.py
+ENTRYPOINT [ "streamlit", "run", "reviewProd.py", \
+    "--server.port", "80", \
+    "--server.enableCORS", "true", \
+    "--browser.serverAddress", "0.0.0.0", \
+    "--browser.serverPort", "443"]
