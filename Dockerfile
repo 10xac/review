@@ -7,7 +7,7 @@ RUN pip3 install -r requirements.txt
 
 COPY . .
 
-EXPOSE 80
+EXPOSE 8501
 
 RUN mkdir -p /root/.streamlit
 
@@ -18,4 +18,4 @@ email = \"\"\n\
 
 RUN bash -c 'mv ./config.toml /root/.streamlit/config.toml'
 
-CMD streamlit run reviewProd.py --server.port 80 --browser.serverAddress 0.0.0.0 --browser.serverPort 443
+CMD streamlit run reviewProd.py
