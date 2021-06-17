@@ -3,7 +3,6 @@ import re
 import boto3
 import base64
 import json
-from dns.rdatatype import DNAME
 from google.protobuf import internal
 import pandas as pd
 import mysql.connector as mysql
@@ -45,7 +44,7 @@ def DBConnect(dbName=None):
 
 def createDB(dbName):
     conn, cur = DBConnect()
-    cur.execute("CREATE DATABASE {dbName}")
+    cur.execute(f"CREATE DATABASE {dbName}")
     conn.commit()
     cur.close()
 
@@ -141,11 +140,11 @@ def fromTenxToReview(dbName):
                            'statistics_proficiency', 'algebra_proficiency', 'data_science_project',
                            'data_science_profile', 'self_taught', 'proceed_to_stage2', 'test_score', 'test_status']]
 
-    reviewersTwo = getReviewers(2)
+    reviewersTwo = getReviewers(2, dbName)
     intervalTwo = len(appliInfo) // len(reviewersTwo)
     reviewTwoId = [reviewerTwo[0] for reviewerTwo in reviewersTwo]
 
-    reviewersThree = getReviewers(3)
+    reviewersThree = getReviewers(3, dbName)
     intervalThree = len(appliInfo) // len(reviewersThree)
     reviewThreeId = [reviewerThree[0] for reviewerThree in reviewersThree]
 

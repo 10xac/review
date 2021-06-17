@@ -6,25 +6,25 @@ import sessionState
 
 st. set_page_config(layout="wide")
 
-def getReviewerAppli(reviewerId, reviewerGroup):
+def getReviewerAppli(reviewerId, reviewerGroup, dbName):
 
     query = "SELECT * from applicant_information"
-    df = createDBandTables.db_execute_fetch(query, rdf=True, dbName='review')
+    df = createDBandTables.db_execute_fetch(query, rdf=True, dbName=dbName)
     df.drop(['2nd_reviewer_id', '2nd_reviewer_accepted', '3rd_reviewer_id', '3rd_reviewer_accepted'], inplace=True, axis=1)
 
     if reviewerGroup == 2:
         query = f"SELECT * from applicant_information where 2nd_reviewer_id = {reviewerId}"
-        df = createDBandTables.db_execute_fetch(query, rdf=True, dbName='review')
+        df = createDBandTables.db_execute_fetch(query, rdf=True, dbName=dbName)
         df.drop(['3rd_reviewer_id', 'accepted', '3rd_reviewer_accepted'], inplace=True, axis=1)
 
     elif reviewerGroup == 3:
         query = f"SELECT * from applicant_information where 3rd_reviewer_id = {reviewerId}"
-        df = createDBandTables.db_execute_fetch(query, rdf=True, dbName='review')
+        df = createDBandTables.db_execute_fetch(query, rdf=True, dbName=dbName)
         df.drop(['2nd_reviewer_id', 'accepted', '2nd_reviewer_accepted'], inplace=True, axis=1)
 
     return df
 
-def getNotDoneReviews(reviewerId, reviewerGroup):
+def getNotDoneReviews(reviewerId, reviewerGroup, dbName):
 
     query = "SELECT * from applicant_information where accepted IS NULL"
     if reviewerGroup == 2:
@@ -32,15 +32,15 @@ def getNotDoneReviews(reviewerId, reviewerGroup):
     elif reviewerGroup == 3:
         query = f"SELECT * from applicant_information where 3rd_reviewer_accepted IS NULL and 3rd_reviewer_id = {reviewerId}"
 
-    df = createDBandTables.db_execute_fetch(query, rdf=True, dbName='review')
+    df = createDBandTables.db_execute_fetch(query, rdf=True, dbName=dbName)
 
     return len(df)
 
-def displayQuestionAndAnswer(reviewerId, reviewerGroup, email):
+def displayQuestionAndAnswer(reviewerId, reviewerGroup, email, dbName):
 
-    conn, cur = createDBandTables.DBConnect('review')
-    applicant_info = getReviewerAppli(reviewerId, reviewerGroup)
-    notDone = getNotDoneReviews(reviewerId, reviewerGroup)
+    conn, cur = createDBandTables.DBConnect(dbName)
+    applicant_info = getReviewerAppli(reviewerId, reviewerGroup, dbName)
+    notDone = getNotDoneReviews(reviewerId, reviewerGroup, dbName)
     remaining = len(applicant_info) - notDone
     percentage = round(remaining / len(applicant_info)) * 100
     N = 1
@@ -136,14 +136,14 @@ def displayQuestionAndAnswer(reviewerId, reviewerGroup, email):
             cur.close()
 
 
-def verifyEmail():
+def verifyEmail(dbName):
     st.title("2021 Applicants Review")
     email = st.text_input("Enter Your 10academy Email below")
 
     if email:
         try:
             query = f"SELECT * fROM reviewer WHERE reviewer_email = '{email}'"
-            res = createDBandTables.db_execute_fetch(query, rdf=False, dbName='review')
+            res = createDBandTables.db_execute_fetch(query, rdf=False, dbName=dbName)
             if len(res) == 0:
                 st.write("You're not a reviewer, Enter a valid email")
 
@@ -154,4 +154,4 @@ def verifyEmail():
             st.write("You're not a reviewer, Enter a valid email")
             raise e
 
-verifyEmail()
+verifyEmail('reviewTest')
