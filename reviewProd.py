@@ -75,7 +75,7 @@ def displayQuestionAndAnswer(reviewerId, reviewerGroup, email, dbName):
     applicant_index = row["applicant_id"].values[0]
 
     with st.form(key='review-form'):
-        st.write(f"You have reviewed {remaining} / {len(applicant_info)} so far; {percentage}% done ")
+        st.write(f"You have reviewed {remaining} / {len(applicant_info)} so far; {percentage:.2f}% done ")
         for question in row.columns:
             if question == "3rd_reviewer_id" or question == "2nd_reviewer_id":
                 continue
