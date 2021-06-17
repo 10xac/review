@@ -3,6 +3,7 @@ import re
 import boto3
 import base64
 import json
+from dns.rdatatype import DNAME
 from google.protobuf import internal
 import pandas as pd
 import mysql.connector as mysql
@@ -42,9 +43,9 @@ def DBConnect(dbName=None):
     cur = conn.cursor()
     return conn, cur
 
-def createDB():
+def createDB(dbName):
     conn, cur = DBConnect()
-    cur.execute("CREATE DATABASE review")
+    cur.execute("CREATE DATABASE {dbName}")
     conn.commit()
     cur.close()
 
@@ -120,14 +121,14 @@ def fromTenx():
 
     return df
 
-def getReviewers(reviewerGroup):
-    _, cur = DBConnect('review')
+def getReviewers(reviewerGroup, dbName):
+    _, cur = DBConnect(dbName)
     cur.execute(f"SELECT * from reviewer where reviewer_group = {reviewerGroup}")
     res = cur.fetchall()
 
     return res
 
-def fromTenxToReview():
+def fromTenxToReview(dbName):
 
     appliInfo = fromTenx()
     appliInfo.drop(["email", 'firstname', 'lastname', 'country', 'city', 'gender', 'name_of_instituition',
@@ -148,7 +149,7 @@ def fromTenxToReview():
     intervalThree = len(appliInfo) // len(reviewersThree)
     reviewThreeId = [reviewerThree[0] for reviewerThree in reviewersThree]
 
-    conn, cur = DBConnect('review')
+    conn, cur = DBConnect(dbName)
     for i, row in appliInfo.iterrows():
         sqlQuery = ''' INSERT INTO applicant_information(comfortability_speaking_english, commitment, self_funding,
                        graduated, awareness_to_payback, renowned_idea, date_of_birth, education_level,
@@ -190,8 +191,8 @@ def fromTenxToReview():
             # Rollback in case there is any error
             conn.rollback()
 
-def writeToReview():
-    conn, cur = DBConnect('review')
+def writeToReview(dbName):
+    conn, cur = DBConnect(dbName)
     reviewers = [['kevin@10academy.org', 'Kevin', 'Karobia', 0],
                  ['yabebal@10academy.org', 'Yabebal', 'Tadesse', 0],
                  ['arun@10academy.org', 'Arun', 'Sharma', 1],
