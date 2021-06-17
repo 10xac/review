@@ -148,7 +148,7 @@ def verifyEmail(dbName):
                 st.write("You're not a reviewer, Enter a valid email")
 
             with st.beta_expander("Show Review Form"):
-                displayQuestionAndAnswer(res[0][0], res[0][4], email)
+                displayQuestionAndAnswer(res[0][0], res[0][4], email, dbName)
 
         except ClientError as e:
             st.write("You're not a reviewer, Enter a valid email")
