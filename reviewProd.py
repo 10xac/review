@@ -42,7 +42,7 @@ def displayQuestionAndAnswer(reviewerId, reviewerGroup, email, dbName):
     applicant_info = getReviewerAppli(reviewerId, reviewerGroup, dbName)
     notDone = getNotDoneReviews(reviewerId, reviewerGroup, dbName)
     remaining = len(applicant_info) - notDone
-    percentage = round(remaining / len(applicant_info)) * 100
+    percentage = remaining / len(applicant_info) * 100
     N = 1
 
     if remaining >= 1:
@@ -154,4 +154,4 @@ def verifyEmail(dbName):
             st.write("You're not a reviewer, Enter a valid email")
             raise e
 
-verifyEmail('reviewTest')
+verifyEmail('review')
