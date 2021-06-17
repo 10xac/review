@@ -36,7 +36,7 @@ def getNotDoneReviews(reviewerId, reviewerGroup):
 
     return len(df)
 
-def displayQuestionAndAnswer(reviewerId, reviewerGroup):
+def displayQuestionAndAnswer(reviewerId, reviewerGroup, email):
 
     conn, cur = createDBandTables.DBConnect('review')
     applicant_info = getReviewerAppli(reviewerId, reviewerGroup)
@@ -44,7 +44,11 @@ def displayQuestionAndAnswer(reviewerId, reviewerGroup):
     remaining = len(applicant_info) - notDone
     percentage = round(remaining / len(applicant_info)) * 100
     N = 1
-    session_state = sessionState.get(page_number=0)
+
+    if remaining >= 1:
+        session_state = sessionState.get(email=email, page_number=remaining)
+    else:
+        session_state = sessionState.get(email=email, page_number=0)
 
     last_page = len(applicant_info) // N
     # st.write(str(session_state.page_number))
@@ -144,7 +148,7 @@ def verifyEmail():
                 st.write("You're not a reviewer, Enter a valid email")
 
             with st.beta_expander("Show Review Form"):
-                displayQuestionAndAnswer(res[0][0], res[0][4])
+                displayQuestionAndAnswer(res[0][0], res[0][4], email)
 
         except ClientError as e:
             st.write("You're not a reviewer, Enter a valid email")
