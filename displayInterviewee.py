@@ -5,7 +5,7 @@ import pandas as pd
 import createDBandTables
 
 def loadData() -> pd.DataFrame:
-    dbName = "tenx"
+    dbName = "tenxdb"
     query = "SELECT * FROM ApplicantInterview"
     df = createDBandTables.db_execute_fetch(query, rdf=True, dbName=dbName)
     return df
