@@ -4,9 +4,6 @@ import sessionState
 import createDBandTables
 import displayInterviewee
 
-
-st.set_page_config(layout="wide")
-
 def interviewForm(intervieweeEmail: str, interviewerEmail: str, dbName: str):
     conn, cur = createDBandTables.DBConnect(dbName)
 

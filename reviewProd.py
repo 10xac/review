@@ -5,7 +5,7 @@ import createDBandTables
 import sessionState
 import interviewForm
 
-st. set_page_config(layout="wide")
+st. set_page_config(layout="wide", page_title="Review and Interview")
 
 def getReviewerAppli(reviewerId, reviewerGroup, dbName):
 
