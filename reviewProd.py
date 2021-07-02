@@ -166,7 +166,7 @@ def verifyEmail(dbName):
             st.write("You're not a reviewer, Enter a valid email")
             raise e
 
-reviewType = st.sidebar.selectbox("Review Stage", ["Admission to week 0", "Admission to week 1"])
+reviewType = st.sidebar.selectbox("Review Stage", ["Admission to week 0", "Interview"])
 
 if reviewType == "Admission to week 0":
     verifyEmail('review')
