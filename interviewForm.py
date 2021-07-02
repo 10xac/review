@@ -95,7 +95,7 @@ def interviewForm(intervieweeEmail: str, interviewerEmail: str, dbName: str):
 
         if submitButton:
             st.write("Submitted")
-            query = f"""INSERT INTO ***** (interviewer_email,interviewee_email,on_time,communication_skill,q1,q2,q3,
+            query = f"""INSERT INTO ApplicantInterviewResult (interviewer_email,interviewee_email,on_time,communication_skill,q1,q2,q3,
                         payforward_confirmation,fulltime_confirmation,selffund_confirmation,mlflow_design_understanding,
                         code_understanding, comments, suitable, predict_job_readiness, predict_distinction_graduation,
                         predict_first_job_interview_pass, predict_outstanding_social_contribution)
