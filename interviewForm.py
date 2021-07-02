@@ -96,7 +96,7 @@ def interviewForm(intervieweeEmail: str, interviewerEmail: str, dbName: str):
                         payforward_confirmation,fulltime_confirmation,selffund_confirmation,mlflow_design_understanding,
                         code_understanding, comments, suitable, predict_job_readiness, predict_distinction_graduation,
                         predict_first_job_interview_pass, predict_outstanding_social_contribution)
-                        VALUES({interviewerEmail}, {intervieweeEmail}, {onTime}, {communincation}. {QA1}, {QA2}, {QA3}
+                        VALUES('{interviewerEmail}', '{intervieweeEmail}', {onTime}, {communincation}. {QA1}, {QA2}, {QA3}
                         {payForward}, {fullTime}, {selfFund}, {mlFlow}, {codeUnderstanding}, {comments}, {suitable},
                         {predictJobReadiness}, {predictDistinctionGraduation}, {predictFirstJobInterviewPass},
                         {predictOutStandingSocialContribution})"""
