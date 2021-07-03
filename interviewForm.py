@@ -96,10 +96,10 @@ def interviewForm(intervieweeEmail: str, interviewerEmail: str, dbName: str):
                         payforward_confirmation,fulltime_confirmation,selffund_confirmation,mlflow_design_understanding,
                         code_understanding, comments, suitable, predict_job_readiness, predict_distinction_graduation,
                         predict_first_job_interview_pass, predict_outstanding_social_contribution)
-                        VALUES('{interviewerEmail}', '{intervieweeEmail}', {onTime}, {communincation}, {QA1}, {QA2}, {QA3}
-                        {payForward}, {fullTime}, {selfFund}, {mlFlow}, {codeUnderstanding}, {comments}, {suitable},
-                        {predictJobReadiness}, {predictDistinctionGraduation}, {predictFirstJobInterviewPass},
-                        {predictOutStandingSocialContribution})"""
+                        VALUES('{interviewerEmail}', '{intervieweeEmail}',{onTime},'{communincation}','{QA1}','{QA2}',
+                        '{QA3}',{payForward},{fullTime},{selfFund},'{mlFlow}','{codeUnderstanding}','{comments}',
+                        {suitable},'{predictJobReadiness}', '{predictDistinctionGraduation}',
+                        '{predictFirstJobInterviewPass}','{predictOutStandingSocialContribution}')"""
 
             cur.execute(query)
 
@@ -130,7 +130,7 @@ def start():
     intervieweeEmail = traineeMail.text_input("", key=str(state.key))
 
     if intervieweeEmail:
-        df = displayInterviewee.loadData()
+        df = displayInterviewee.loadTrainee()
         df = df.loc[df["email"] == intervieweeEmail]
         if len(df) == 0:
             traineeInfo.markdown("<p style='color:#F63366;font-size:22px;'>This email is not registered with the 2021"
@@ -142,7 +142,7 @@ def start():
     interviewerEmail = interviewerMail.text_input("", key="int" + str(state.key))
 
     if interviewerEmail:
-        df = displayInterviewee.loadData()
+        df = displayInterviewee.loadInterviwer()
         df = df.loc[df["email"] == interviewerEmail]
         if len(df) == 0:
             interviewQuestions.markdown("<p style='color:#F63366;font-size:22px;'>This is not a registered 10academy"
