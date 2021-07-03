@@ -4,7 +4,7 @@ import sessionState
 import createDBandTables
 import displayInterviewee
 
-def interviewForm(intervieweeEmail: str, interviewerEmail: str, dbName: str):
+def interviewForm(intervieweeEmail: str, interviewerEmail: str, dbName: str) -> str:
     conn, cur = createDBandTables.DBConnect(dbName)
 
     with st.form(key="interview-form"):
@@ -91,7 +91,6 @@ def interviewForm(intervieweeEmail: str, interviewerEmail: str, dbName: str):
             submitButton = st.form_submit_button(label="Submit")
 
         if submitButton:
-            st.write("Submitted")
             query = """INSERT INTO ApplicantInterviewResult (interviewer_email,interviewee_email,on_time,communication_skill,q1,q2,q3,
                         payforward_confirmation,fulltime_confirmation,selffund_confirmation,mlflow_design_understanding,
                         code_understanding, comments, suitable, predict_job_readiness, predict_distinction_graduation,
@@ -106,6 +105,8 @@ def interviewForm(intervieweeEmail: str, interviewerEmail: str, dbName: str):
             conn.commit()
             cur.close()
 
+        return "Interview answers submitted"
+
 def start():
 
     state = sessionState.get(key=0)
@@ -118,6 +119,8 @@ def start():
                 " below</p>", unsafe_allow_html=True)
     interviewerMail = st.empty()
     interviewQuestions = st.empty()
+
+    submitted = st.empty()
 
     colB1, colB2 = st.beta_columns([1, .1])
 
@@ -149,4 +152,5 @@ def start():
                                         " email</p>", unsafe_allow_html=True)
         else:
             with interviewQuestions.beta_expander("Show Trainee The Interview Form"):
-                interviewForm(intervieweeEmail, interviewerEmail, "tenxdb")
+                success = interviewForm(intervieweeEmail, interviewerEmail, "tenxdb")
+                submitted.write(success)
