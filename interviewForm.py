@@ -105,7 +105,7 @@ def interviewForm(intervieweeEmail: str, interviewerEmail: str, dbName: str) -> 
             conn.commit()
             cur.close()
 
-        return "Interview answers submitted"
+            return "Interview answers submitted"
 
 def start():
 
