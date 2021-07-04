@@ -153,4 +153,5 @@ def start():
         else:
             with interviewQuestions.beta_expander("Show Trainee The Interview Form"):
                 success = interviewForm(intervieweeEmail, interviewerEmail, "tenxdb")
-                submitted.write(success)
+                if success:
+                    submitted.write(success)

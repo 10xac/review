@@ -20,7 +20,7 @@ def displayTraineeInfo(df: pd.DataFrame) -> None:
     colsToDisplay = ["community_summary", "github_activity", "github_link_score", "writing_score",
                      "number_of_submissions", "gender", "nationality", "final_score", "applicant_rank", "thought_chain"]
 
-    st.title(f"{df['fullname']}'s Week 0 Stats")
+    st.title(f"{df['fullname'].values[0]}'s Week 0 Stats")
 
     stat1, stat2, stat3, stat4, stat5 = st.beta_columns([1, 1, 1, 1, 1])
     with stat1:
