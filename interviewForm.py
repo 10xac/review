@@ -114,13 +114,11 @@ def interviewForm(intervieweeEmail: str, interviewerEmail: str, dbName: str) -> 
 def start():
 
     state = sessionState.get(key=0)
-    st.markdown("<p style='font-size:22px; margin-bottom:-50px; border-radius:10px;'>Enter trainee's email"
-                " below</p>", unsafe_allow_html=True)
+    traineeMailTitle = st.empty()
     traineeMail = st.empty()
     traineeInfo = st.empty()
 
-    st.markdown("<p style='font-size:22px; margin-bottom:-50px; border-radius:10px;'>Enter your 10academy email"
-                " below</p>", unsafe_allow_html=True)
+    interviewerMailTitle = st.empty()
     interviewerMail = st.empty()
     interviewQuestions = st.empty()
 
@@ -134,6 +132,8 @@ def start():
         if st.button("Reset"):
             state.key += 1
 
+    traineeMailTitle.markdown("<p style='font-size:22px; margin-bottom:-50px; border-radius:10px;'>Enter trainee's"
+                              " email below</p>", unsafe_allow_html=True)
     df = displayInterviewee.loadTrainee()
     intervieweeEmail = traineeMail.multiselect("", df['email'], key=str(state.key))
 
@@ -142,6 +142,8 @@ def start():
         with traineeInfo.beta_expander("Show Trainee Info"):
             displayInterviewee.displayTraineeInfo(df)
 
+    interviewerMailTitle.markdown("<p style='font-size:22px; margin-bottom:-50px; border-radius:10px;'>Enter your "
+                                  "10academy email below</p>", unsafe_allow_html=True)
     interviewerEmail = interviewerMail.text_input("", key="int" + str(state.key))
 
     if interviewerEmail:
