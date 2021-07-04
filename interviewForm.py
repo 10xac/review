@@ -10,51 +10,52 @@ def interviewForm(intervieweeEmail: str, interviewerEmail: str, dbName: str) -> 
     with st.form(key="interview-form"):
         st.title("Interview Form")
 
-        st.markdown("<p style='font-size:22px; border-radius:10px;'>2. Was the trainee on time for"
+        st.markdown("<p style='font-size:22px; border-radius:10px;'>1. Was the trainee on time for"
                     " this interview?</p>", unsafe_allow_html=True)
-        onTime = st.radio("", ("Yes", "No"), key="on time")
+        onTime = st.radio("", ("", "Yes", "No"), key="on time")
 
-        st.markdown("<p style='font-size:22px; border-radius:10px;'>3. How good is this trainees'"
+        st.markdown("<p style='font-size:22px; border-radius:10px;'>2. How good is this trainees'"
                     " communication?</p>", unsafe_allow_html=True)
-        communincation = st.radio("", ("Exceeds Expectation", "Meets Expectation", "Does Not Meet Expectation",
+        communincation = st.radio("", ("", "Exceeds Expectation", "Meets Expectation", "Does Not Meet Expectation",
                                   "Not Applicable"), key="communication")
 
-        st.markdown("<p style='font-size:22px; border-radius:10px;'>4. Interviewer asks: What did you think when"
-                    " you saw the week 0 challenges?. </p>",
+        st.markdown("<p style='font-size:22px; border-radius:10px;'>3. Interviewer asks: What did you think when"
+                    " you saw the week 0 challenges?. Did you manage to finish all the required tasks? What technical"
+                    " and non-technical challenges did you face over the week and how did you solve them?</p>",
                     unsafe_allow_html=True)
-        QA1 = st.radio("", ("Exceeds Expectation", "Meets Expectation", "Does Not Meet Expectation",
+        QA1 = st.radio("", ("", "Exceeds Expectation", "Meets Expectation", "Does Not Meet Expectation",
                        "Not Applicable"), key="QA1")
 
-        st.markdown("<p style='font-size:22px; border-radius:10px;'>5. Interviewer asks: What's something interesting "
+        st.markdown("<p style='font-size:22px; border-radius:10px;'>4. Interviewer asks: What's something interesting "
                     "you shared with someone during 10 Academy week 0?</p>", unsafe_allow_html=True)
-        QA2 = st.radio("", ("Exceeds Expectation", "Meets Expectation", "Does Not Meet Expectation",
+        QA2 = st.radio("", ("", "Exceeds Expectation", "Meets Expectation", "Does Not Meet Expectation",
                        "Not Applicable"), key="QA2")
 
-        st.markdown("<p style='font-size:22px; border-radius:10px;'>6. Interviewer asks: What's your biggest why for "
+        st.markdown("<p style='font-size:22px; border-radius:10px;'>5. Interviewer asks: What's your biggest why for "
                     "becoming an  ML Engineer?</p>", unsafe_allow_html=True)
-        QA3 = st.radio("", ("Exceeds Expectation", "Meets Expectation", "Does Not Meet Expectation",
+        QA3 = st.radio("", ("", "Exceeds Expectation", "Meets Expectation", "Does Not Meet Expectation",
                        "Not Applicable"), key="QA3")
 
-        st.markdown("<p style='font-size:22px; border-radius:10px;'>7. Interviewer asks: Is the Trainee ready to pay"
+        st.markdown("<p style='font-size:22px; border-radius:10px;'>6. Interviewer asks: Is the Trainee ready to pay"
                     " forward?</p>", unsafe_allow_html=True)
-        payForward = st.radio("", ("Yes", "No"), key="payForward")
+        payForward = st.radio("", ("", "Yes", "No"), key="payForward")
 
-        st.markdown("<p style='font-size:22px; border-radius:10px;'>8. Interviewer asks: Is the Trainee ready to commit"
+        st.markdown("<p style='font-size:22px; border-radius:10px;'>7. Interviewer asks: Is the Trainee ready to commit"
                     " to the program full time?</p>", unsafe_allow_html=True)
-        fullTime = st.radio("", ("Yes", "No"), key="fullTime")
+        fullTime = st.radio("", ("", "Yes", "No"), key="fullTime")
 
-        st.markdown("<p style='font-size:22px; border-radius:10px;'>9. Interviewer asks: Is the Trainee ready to self "
+        st.markdown("<p style='font-size:22px; border-radius:10px;'>8. Interviewer asks: Is the Trainee ready to self "
                     " fund?</p>", unsafe_allow_html=True)
-        selfFund = st.radio("", ("Yes", "No"), key="selfFund")
+        selfFund = st.radio("", ("", "Yes", "No"), key="selfFund")
 
-        st.markdown("<p style='font-size:22px; border-radius:10px;'>10. Interviewer asks: Does the Trainee have a "
+        st.markdown("<p style='font-size:22px; border-radius:10px;'>9. Interviewer asks: Does the Trainee have a "
                     "concrete understanding of ML Flow Design??</p>", unsafe_allow_html=True)
-        mlFlow = st.radio("", ("Exceeds Expectation", "Meets Expectation", "Does Not Meet Expectation",
+        mlFlow = st.radio("", ("", "Exceeds Expectation", "Meets Expectation", "Does Not Meet Expectation",
                           "Not Applicable"), key="mlFlow")
 
-        st.markdown("<p style='font-size:22px; border-radius:10px;'>11. Interviewer asks: Does the trainee have "
+        st.markdown("<p style='font-size:22px; border-radius:10px;'>10. Interviewer asks: Does the trainee have "
                     "concrete Code understanding?</p>", unsafe_allow_html=True)
-        codeUnderstanding = st.radio("", ("Exceeds Expectation", "Meets Expectation", "Does Not Meet Expectation",
+        codeUnderstanding = st.radio("", ("", "Exceeds Expectation", "Meets Expectation", "Does Not Meet Expectation",
                                      "Not Applicable"), key="codeUnderstanding")
 
         st.write("## Interviewer Section (These questions are for you, the interviewer to answer)")
@@ -64,23 +65,26 @@ def interviewForm(intervieweeEmail: str, interviewerEmail: str, dbName: str) -> 
 
         st.markdown("<p style='font-size:22px; border-radius:10px;'>ii. Is this Trainee suitable "
                     "for 10academy training program?</p>", unsafe_allow_html=True)
-        suitable = st.radio("", ("yes", "no"), key="suitable")
+        suitable = st.radio("", ("", "yes", "no"), key="suitable")
 
         st.markdown("<p style='font-size:22px; border-radius:10px;'>iii. What's your prediction? If accepted, will this"
                     "Trainee be job ready at the end of the training?</p>", unsafe_allow_html=True)
-        predictJobReadiness = st.radio("", ("Absolutely", "Quite Sure", "Sure", "Not Sure"), key="predictJobReadiness")
+        predictJobReadiness = st.radio("", ("", "Absolutely", "Quite Sure", "Sure", "Not Sure"),
+                                       key="predictJobReadiness")
 
         st.markdown("<p style='font-size:22px; border-radius:10px;'>iv. What's your prediction? If accepted, will this "
                     " Trainee graduate with distinction?</p>", unsafe_allow_html=True)
-        predictDistinctionGraduation = st.radio("", ("Absolutely", "Quite Sure", "Sure", "Not Sure"), key="distinction")
+        predictDistinctionGraduation = st.radio("", ("", "Absolutely", "Quite Sure", "Sure", "Not Sure"),
+                                                key="distinction")
 
         st.markdown("<p style='font-size:22px; border-radius:10px;'>v. What's your prediction? If accepted, will this "
                     "Trainee pass their first interview?</p>", unsafe_allow_html=True)
-        predictFirstJobInterviewPass = st.radio("", ("Absolutely", "Quite Sure", "Sure", "Not Sure"), key="1Interview")
+        predictFirstJobInterviewPass = st.radio("", ("", "Absolutely", "Quite Sure", "Sure", "Not Sure"),
+                                                key="1Interview")
 
         st.markdown("<p style='font-size:22px; border-radius:10px;'>vi. What's your prediction? If accepted, will this "
                     "trainee have outstanding social contribution?</p>", unsafe_allow_html=True)
-        predictOutStandingSocialContribution = st.radio("", ("Absolutely", "Quite Sure", "Sure", "Not Sure"),
+        predictOutStandingSocialContribution = st.radio("", ("", "Absolutely", "Quite Sure", "Sure", "Not Sure"),
                                                         key="social contribution")
 
         colB1, colB2 = st.beta_columns([1, .1])
@@ -130,17 +134,13 @@ def start():
         if st.button("Reset"):
             state.key += 1
 
-    intervieweeEmail = traineeMail.text_input("", key=str(state.key))
+    df = displayInterviewee.loadTrainee()
+    intervieweeEmail = traineeMail.multiselect("", df['email'], key=str(state.key))
 
     if intervieweeEmail:
-        df = displayInterviewee.loadTrainee()
-        df = df.loc[df["email"] == intervieweeEmail]
-        if len(df) == 0:
-            traineeInfo.markdown("<p style='color:#F63366;font-size:22px;'>This email is not registered with the 2021"
-                                 " batch</p>", unsafe_allow_html=True)
-        else:
-            with traineeInfo.beta_expander("Show Trainee Info"):
-                displayInterviewee.displayTraineeInfo(df)
+        df = df.loc[df["email"] == intervieweeEmail[0]]
+        with traineeInfo.beta_expander("Show Trainee Info"):
+            displayInterviewee.displayTraineeInfo(df)
 
     interviewerEmail = interviewerMail.text_input("", key="int" + str(state.key))
 
