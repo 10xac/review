@@ -101,7 +101,7 @@ def interviewForm(intervieweeEmail: str, interviewerEmail: str, dbName: str) -> 
                         predict_first_job_interview_pass, predict_outstanding_social_contribution)
                         VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
 
-            cur.execute(query, (interviewerEmail, intervieweeEmail, onTime, communincation, QA1, QA2, QA3,
+            cur.execute(query, (interviewerEmail, intervieweeEmail[0], onTime, communincation, QA1, QA2, QA3,
                                 payForward, fullTime, selfFund, mlFlow, codeUnderstanding, comments, suitable,
                                 predictJobReadiness, predictDistinctionGraduation, predictFirstJobInterviewPass,
                                 predictOutStandingSocialContribution))
