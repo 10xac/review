@@ -18,8 +18,9 @@ def loadInterviwer() -> pd.DataFrame:
     return df
 
 def displayTraineeInfo(df: pd.DataFrame) -> None:
-    colsToDisplay = ["community_summary", "github_activity", "github_link_score", "writing_score",
-                     "number_of_submissions", "gender", "nationality", "final_score", "applicant_rank", "thought_chain"]
+    colsToDisplay = ["applicant_rank", "gender", "github_activity", "nationality", "cv_score"
+                     "number_of_submissions", "github_link_score", "writing_score", "final_score", "community_summary",
+                     "thought_chain"]
 
     st.title(f"{df['fullname'].values[0]}'s Week 0 Stats")
 
@@ -62,7 +63,7 @@ def displayStat(col: str, value: float, rank: float, max: float):
     col = " ".join(colsList)
     if not math.isnan(rank):
         st.markdown("<p style='border:solid #d3d3d3;box-shadow: .5px 1.5px #d3d3d3; border-radius:10px; padding:10px;'>"
-                    f"{col.title()}: {value}  \n Rank: {int(rank)}/{int(max)}</p>", unsafe_allow_html=True)
+                    f"{col.title()}: {value:.2f} <br></br> Rank: {int(rank)}/{int(max)}</p>", unsafe_allow_html=True)
     else:
         st.markdown("<p style='border:solid #d3d3d3;box-shadow: .5px 1.5px #d3d3d3; border-radius:10px; padding:10px;'>"
                     f"{col.title()}: {value}</p>", unsafe_allow_html=True)
