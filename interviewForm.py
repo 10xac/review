@@ -134,7 +134,13 @@ def start():
 
     traineeMailTitle.markdown("<p style='font-size:22px; margin-bottom:-50px; border-radius:10px;'>Enter trainee's"
                               " email below</p>", unsafe_allow_html=True)
+
     df = displayInterviewee.loadTrainee()
+
+    for col in df.columns:
+        df[col + "_rank"] = df[col].rank(method="max", na_option='bottom', ascending=False, numeric_only=True)
+        df[col + "_max"] = df[col + "_rank"].max()
+
     intervieweeEmail = traineeMail.multiselect("", df['email'], key=str(state.key))
 
     if intervieweeEmail:
