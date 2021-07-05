@@ -18,7 +18,7 @@ def loadInterviwer() -> pd.DataFrame:
     return df
 
 def displayTraineeInfo(df: pd.DataFrame) -> None:
-    colsToDisplay = ["applicant_rank", "gender", "github_activity", "nationality", "cv_score"
+    colsToDisplay = ["applicant_rank", "gender", "github_activity", "nationality", "cv_score",
                      "number_of_submissions", "github_link_score", "writing_score", "final_score", "community_summary",
                      "thought_chain"]
 
