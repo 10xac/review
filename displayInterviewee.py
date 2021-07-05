@@ -24,7 +24,7 @@ def displayTraineeInfo(df: pd.DataFrame) -> None:
 
     st.title(f"{df['fullname'].values[0]}'s Week 0 Stats")
 
-    stat1, stat2, stat3, stat4, stat5 = st.beta_columns([1, 1, 1, 1, 1])
+    stat1, stat2, stat3, stat4 = st.beta_columns([1, 1, 1, 1])
     with stat1:
         displayStat(colsToDisplay[0], df[colsToDisplay[0]].values[0], df[colsToDisplay[0] + "_rank"].values[0],
                     df[colsToDisplay[0] + "_max"].values[0])
@@ -37,11 +37,11 @@ def displayTraineeInfo(df: pd.DataFrame) -> None:
     with stat4:
         displayStat(colsToDisplay[3], df[colsToDisplay[3]].values[0], df[colsToDisplay[3] + "_rank"].values[0],
                     df[colsToDisplay[3] + "_max"].values[0])
+
+    stat5, stat6, stat7, stat8 = st.beta_columns([1, 1, 1, 1])
     with stat5:
         displayStat(colsToDisplay[4], df[colsToDisplay[4]].values[0], df[colsToDisplay[4] + "_rank"].values[0],
                     df[colsToDisplay[4] + "_max"].values[0])
-
-    stat6, stat7, stat8, stat9, stat10 = st.beta_columns([1, 1, 1, 1, 1])
     with stat6:
         displayStat(colsToDisplay[5], df[colsToDisplay[5]].values[0], df[colsToDisplay[5] + "_rank"].values[0],
                     df[colsToDisplay[5] + "_max"].values[0])
@@ -51,12 +51,17 @@ def displayTraineeInfo(df: pd.DataFrame) -> None:
     with stat8:
         displayStat(colsToDisplay[7], df[colsToDisplay[7]].values[0], df[colsToDisplay[7] + "_rank"].values[0],
                     df[colsToDisplay[7] + "_max"].values[0])
+
+    stat9, stat10, stat11, _ = st.beta_columns([1, 1, 1, 1])
     with stat9:
         displayStat(colsToDisplay[8], df[colsToDisplay[8]].values[0], df[colsToDisplay[8] + "_rank"].values[0],
                     df[colsToDisplay[8] + "_max"].values[0])
     with stat10:
-        displayStat(colsToDisplay[9], df[colsToDisplay[9]].values[0], df[colsToDisplay[8] + "_rank"].values[0],
-                    df[colsToDisplay[8] + "_max"].values[0])
+        displayStat(colsToDisplay[9], df[colsToDisplay[9]].values[0], df[colsToDisplay[9] + "_rank"].values[0],
+                    df[colsToDisplay[9] + "_max"].values[0])
+    with stat11:
+        displayStat(colsToDisplay[10], df[colsToDisplay[10]].values[0], df[colsToDisplay[10] + "_rank"].values[0],
+                    df[colsToDisplay[10] + "_max"].values[0])
 
 def displayStat(col: str, value: float, rank: float, max: float):
     colsList = col.split("_")
