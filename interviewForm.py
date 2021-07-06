@@ -69,22 +69,22 @@ def interviewForm(intervieweeEmail: str, interviewerEmail: str, dbName: str) -> 
 
         st.markdown("<p style='font-size:22px; border-radius:10px;'>iii. What's your prediction? If accepted, will this"
                     "Trainee be job ready at the end of the training?</p>", unsafe_allow_html=True)
-        predictJobReadiness = st.radio("", ("", "Absolutely", "Quite Sure", "Sure", "Not Sure"),
+        predictJobReadiness = st.radio("", ("", "Absolutely", "Very Sure", "Sure", "Not Sure"),
                                        key="predictJobReadiness")
 
         st.markdown("<p style='font-size:22px; border-radius:10px;'>iv. What's your prediction? If accepted, will this "
                     " Trainee graduate with distinction?</p>", unsafe_allow_html=True)
-        predictDistinctionGraduation = st.radio("", ("", "Absolutely", "Quite Sure", "Sure", "Not Sure"),
+        predictDistinctionGraduation = st.radio("", ("", "Absolutely", "Very Sure", "Sure", "Not Sure"),
                                                 key="distinction")
 
         st.markdown("<p style='font-size:22px; border-radius:10px;'>v. What's your prediction? If accepted, will this "
                     "Trainee pass their first interview?</p>", unsafe_allow_html=True)
-        predictFirstJobInterviewPass = st.radio("", ("", "Absolutely", "Quite Sure", "Sure", "Not Sure"),
+        predictFirstJobInterviewPass = st.radio("", ("", "Absolutely", "Very Sure", "Sure", "Not Sure"),
                                                 key="1Interview")
 
         st.markdown("<p style='font-size:22px; border-radius:10px;'>vi. What's your prediction? If accepted, will this "
                     "trainee have outstanding social contribution?</p>", unsafe_allow_html=True)
-        predictOutStandingSocialContribution = st.radio("", ("", "Absolutely", "Quite Sure", "Sure", "Not Sure"),
+        predictOutStandingSocialContribution = st.radio("", ("", "Absolutely", "Very Sure", "Sure", "Not Sure"),
                                                         key="social contribution")
 
         colB1, colB2 = st.beta_columns([1, .1])
