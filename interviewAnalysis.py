@@ -89,7 +89,7 @@ def first_layer(df: pd.DataFrame):
     st.text(f"Total Trainee Interviewed:    {df['interviewee_email'].nunique()}")
     suitable, job_readineess, grad = st.beta_columns([1, 1, 1])
     first_interview_pass, social, _ = st.beta_columns([1, 1, 1])
-    gender, country = st.beta_columns([1, 1])
+    gender, nationality = st.beta_columns([1, 1])
     with suitable:
         first_plot_bar(df, 'suitable')
     with job_readineess:
@@ -102,8 +102,8 @@ def first_layer(df: pd.DataFrame):
         first_plot_bar(df, 'predict_outstanding_social_contribution')
     with gender:
         piePlot(df, 'gender')
-    with country:
-        piePlot(df, 'country')
+    with nationality:
+        piePlot(df, 'nationality')
 
 def insight_per_interviewee(df: pd.DataFrame):
     """
