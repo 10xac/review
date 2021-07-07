@@ -23,31 +23,20 @@ def loadInterview() -> pd.DataFrame:
     return df
 
 def plot_bar(df: pd.DataFrame, col_name: str):
-    """
-
-    Parameters
-    ----------
-    df:pd.DataFrame : The data that has the required colum to plot
-
-    col_name:str : the column to aggregate with
-
-
-    Returns
-    -------
-    A bar chart
-
-    """
-    df.loc[df[col_name] == "Quite Sure", col_name] = "Very Sure"
-
     colsList = col_name.split("_")
     col = " ".join(colsList)
 
-    data = df[col_name].value_counts().reset_index(name='Count')
-    fig = px.bar(data, x='index', y='Count', height=500, width=400, title=f'{col.title()}')
+    df.loc[df[col_name] == "Quite Sure", col_name] = "Very Sure"
+    df.loc[df[col_name] == "", col_name] = "unanswered"
+
+    data = pd.crosstab(df[col_name], df['interviewer_email'])
+
+    fig = px.bar(data, x=data.index, y=list(data.columns), height=550, width=580, title=f'{col.title()}')
     st.plotly_chart(fig)
 
 def first_plot_bar(df: pd.DataFrame, col_name: str):
     df.loc[df[col_name] == "Quite Sure", col_name] = "Very Sure"
+    df.loc[df[col_name] == "", col_name] = "unanswered"
     values = df[col_name].unique()
     uniqueCount = []
     for value in values:
@@ -59,7 +48,7 @@ def first_plot_bar(df: pd.DataFrame, col_name: str):
     col = " ".join(colsList)
 
     dfPlot = pd.DataFrame(uniqueCount, columns=["answer", "count"])
-    fig = px.bar(dfPlot, x='answer', y='count', height=500, width=400, title=f'{col.title()}')
+    fig = px.bar(dfPlot, x='answer', y='count', height=550, width=580, title=f'Total {col.title()}')
     st.plotly_chart(fig)
 
 def piePlot(df: pd.DataFrame, col: str):
@@ -70,7 +59,7 @@ def piePlot(df: pd.DataFrame, col: str):
     df = df.drop_duplicates("email")
 
     data = df[col].value_counts().reset_index(name='Count')
-    fig = px.pie(data, names='index', values='Count', height=500, width=400, title=f'{col.title()}')
+    fig = px.pie(data, names='index', values='Count', height=550, width=580, title=f'{col.title()}')
     st.plotly_chart(fig)
 
 def first_layer(df: pd.DataFrame):
@@ -87,19 +76,22 @@ def first_layer(df: pd.DataFrame):
 
     """
     st.text(f"Total Trainee Interviewed:    {df['interviewee_email'].nunique()}")
-    suitable, job_readineess, grad = st.beta_columns([1, 1, 1])
-    first_interview_pass, social, _ = st.beta_columns([1, 1, 1])
+    suitable, suitable2 = st.beta_columns([1, 1])
+    job_readineess, grad = st.beta_columns([1, 1])
+    first_interview_pass, social = st.beta_columns([1, 1])
     gender, nationality = st.beta_columns([1, 1])
     with suitable:
         first_plot_bar(df, 'suitable')
+    with suitable2:
+        plot_bar(df, 'suitable')
     with job_readineess:
-        first_plot_bar(df, 'predict_job_readiness')
+        plot_bar(df, 'predict_job_readiness')
     with grad:
-        first_plot_bar(df, 'predict_distinction_graduation')
+        plot_bar(df, 'predict_distinction_graduation')
     with first_interview_pass:
-        first_plot_bar(df, 'predict_first_job_interview_pass')
+        plot_bar(df, 'predict_first_job_interview_pass')
     with social:
-        first_plot_bar(df, 'predict_outstanding_social_contribution')
+        plot_bar(df, 'predict_outstanding_social_contribution')
     with gender:
         piePlot(df, 'gender')
     with nationality:
@@ -122,8 +114,9 @@ def insight_per_interviewee(df: pd.DataFrame):
     data = df.query(f"interviewee_email == '{interviewee_email}' ")
 
     with st.beta_expander(f"show {interviewee_email} interview data"):
-        suitable1, job_readineess1, grad1 = st.beta_columns([1, 1, 1])
-        first_interview_pass1, social1, _ = st.beta_columns([1, 1, 1])
+        suitable1, job_readineess1 = st.beta_columns([1, 1])
+        first_interview_pass1, grad1 = st.beta_columns([1, 1])
+        social1, _ = st.beta_columns([1, 1])
         with suitable1:
             plot_bar(data, 'suitable')
         with job_readineess1:
@@ -134,6 +127,12 @@ def insight_per_interviewee(df: pd.DataFrame):
             plot_bar(data, 'predict_first_job_interview_pass')
         with social1:
             plot_bar(data, 'predict_outstanding_social_contribution')
+
+        st.write("## Interviewer Comments")
+        for comment in data["comments"]:
+            if isinstance(comment, str):
+                st.markdown(f"<p style='color:black;background:#F0F2F6;border-radius:5px;padding:5px;'>{comment}</p>",
+                            unsafe_allow_html=True)
 
 
 def main():
