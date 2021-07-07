@@ -1,9 +1,9 @@
 from botocore.exceptions import ClientError
 import streamlit as st
-import pandas as pd
 import createDBandTables
 import sessionState
 import interviewForm
+import interviewAnalysis
 
 st. set_page_config(layout="wide", page_title="Review and Interview")
 
@@ -166,9 +166,11 @@ def verifyEmail(dbName):
             st.write("You're not a reviewer, Enter a valid email")
             raise e
 
-reviewType = st.sidebar.selectbox("Review Stage", ["Admission to week 0", "Interview"])
+reviewType = st.sidebar.selectbox("Review Stage", ["Admission to week 0", "Interview", "Interview Analysis"])
 
 if reviewType == "Admission to week 0":
     verifyEmail('review')
 elif reviewType == "Interview":
     interviewForm.start()
+elif reviewType == "Interview Analysis":
+    interviewAnalysis.main()

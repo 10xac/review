@@ -1,4 +1,3 @@
-from typing_extensions import SupportsIndex
 import streamlit as st
 import sessionState
 import createDBandTables

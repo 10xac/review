@@ -1,5 +1,3 @@
-from numpy.lib.npyio import load
-from pandas.io.parsers import read_csv
 import math
 import streamlit as st
 import pandas as pd
