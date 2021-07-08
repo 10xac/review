@@ -48,7 +48,8 @@ def first_plot_bar(df: pd.DataFrame, col_name: str):
     col = " ".join(colsList)
 
     dfPlot = pd.DataFrame(uniqueCount, columns=["answer", "count"])
-    fig = px.bar(dfPlot, x='answer', y='count', height=550, width=580, title=f'Total {col.title()}')
+    fig = px.bar(dfPlot, x='answer', y='count', height=550, width=580, title=f'Total {col.title()}',
+                 category_orders={"answer": ["no", "unanswered", "yes"]})
     st.plotly_chart(fig)
 
 def piePlot(df: pd.DataFrame, col: str):
@@ -61,6 +62,31 @@ def piePlot(df: pd.DataFrame, col: str):
     data = df[col].value_counts().reset_index(name='Count')
     fig = px.pie(data, names='index', values='Count', height=550, width=580, title=f'{col.title()}')
     st.plotly_chart(fig)
+
+def displayResults(df: pd.DataFrame):
+    dfMan = df.copy()
+    dfMan.loc[dfMan["suitable"] == "unanswered", "suitable"] = "yes"
+    dfManGrp = dfMan.groupby(["interviewee_email"])["suitable"].value_counts().reset_index(name="count")
+    dfMaybeCount = dfManGrp["interviewee_email"].value_counts().reset_index(name="email_count")
+    dfMaybeCount = dfMaybeCount.query("email_count > 1")
+
+    dfMaybe = pd.DataFrame(dfManGrp[dfManGrp["interviewee_email"].isin(dfMaybeCount["index"])]
+                           ["interviewee_email"].unique(), columns=["interviewee_email"])
+    dfYesNo = dfManGrp[~dfManGrp["interviewee_email"].isin(dfMaybeCount["index"])]
+
+    dfYes = dfYesNo[dfYesNo["suitable"] == "yes"].drop(["suitable", "count"], axis=1)
+    dfNo = dfYesNo[dfYesNo["suitable"] == "no"].drop(["suitable", "count"], axis=1)
+
+    yes, no, maybe = st.beta_columns([1, 1, 1])
+    with yes:
+        st.write("### Outright Yes")
+        st.write(dfYes)
+    with no:
+        st.write("### Outright No")
+        st.write(dfNo)
+    with maybe:
+        st.write("### The Maybes")
+        st.write(dfMaybe)
 
 def first_layer(df: pd.DataFrame):
     """
@@ -97,6 +123,8 @@ def first_layer(df: pd.DataFrame):
     with nationality:
         piePlot(df, 'nationality')
 
+    displayResults(df)
+
 def insight_per_interviewee(df: pd.DataFrame):
     """
 
@@ -130,7 +158,7 @@ def insight_per_interviewee(df: pd.DataFrame):
 
         st.write("## Interviewer Comments")
         for comment in data["comments"]:
-            if isinstance(comment, str):
+            if len(comment) > 1:
                 st.markdown(f"<p style='color:black;background:#F0F2F6;border-radius:5px;padding:5px;'>{comment}</p>",
                             unsafe_allow_html=True)
 
