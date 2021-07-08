@@ -65,6 +65,7 @@ def piePlot(df: pd.DataFrame, col: str):
 
 def displayResults(df: pd.DataFrame):
     dfMan = df.copy()
+    total = dfMan["interviewee_email"].nunique()
     dfMan.loc[dfMan["suitable"] == "unanswered", "suitable"] = "yes"
     dfManGrp = dfMan.groupby(["interviewee_email"])["suitable"].value_counts().reset_index(name="count")
     dfMaybeCount = dfManGrp["interviewee_email"].value_counts().reset_index(name="email_count")
@@ -74,18 +75,18 @@ def displayResults(df: pd.DataFrame):
                            ["interviewee_email"].unique(), columns=["interviewee_email"])
     dfYesNo = dfManGrp[~dfManGrp["interviewee_email"].isin(dfMaybeCount["index"])]
 
-    dfYes = dfYesNo[dfYesNo["suitable"] == "yes"].drop(["suitable", "count"], axis=1)
-    dfNo = dfYesNo[dfYesNo["suitable"] == "no"].drop(["suitable", "count"], axis=1)
+    dfYes = dfYesNo[dfYesNo["suitable"] == "yes"].drop(["suitable", "count"], axis=1).reset_index(drop=True)
+    dfNo = dfYesNo[dfYesNo["suitable"] == "no"].drop(["suitable", "count"], axis=1).reset_index(drop=True)
 
     yes, no, maybe = st.beta_columns([1, 1, 1])
     with yes:
-        st.write("### Outright Yes")
+        st.write(f"### Outright Yes {dfYes.shape[0]}/{total}")
         st.write(dfYes)
     with no:
-        st.write("### Outright No")
+        st.write(f"### Outright No {dfNo.shape[0]}/{total}")
         st.write(dfNo)
     with maybe:
-        st.write("### The Maybes")
+        st.write(f"### The Maybes {dfMaybe.shape[0]}/{total}")
         st.write(dfMaybe)
 
 def first_layer(df: pd.DataFrame):

@@ -156,7 +156,8 @@ def fromTenxToReview(dbName):
                        work_experience, work_experience_details, python_proficiency, sql_proficiency,
                        statistics_proficiency, algebra_proficiency, data_science_project, data_science_profile,
                        self_taught, proceed_to_stage2, test_score, test_status, 2nd_reviewer_id, 3rd_reviewer_id)
-                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                       %s, %s, %s, %s, %s)
             '''
 
         if i <= intervalTwo:
@@ -205,7 +206,8 @@ def writeToReview(dbName):
                  ]
 
     for reviewer in reviewers:
-        sqlQuery = """INSERT INTO reviewer(reviewer_email, firstname, lastname, reviewer_group) VALUES(%s, %s, %s, %s)"""
+        sqlQuery = """INSERT INTO reviewer(reviewer_email, firstname, lastname, reviewer_group) VALUES(%s, %s, %s, %s)
+                   """
         data = (reviewer[0], reviewer[1], reviewer[2], reviewer[3])
 
         try:
