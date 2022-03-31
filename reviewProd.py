@@ -28,13 +28,16 @@ def getReviewerAppli(reviewerId, reviewerGroup, dbName):
 
 def getNotDoneReviews(reviewerId, reviewerGroup, dbName):
 
-    query = "SELECT * from applicant_information where accepted IS NULL"
-    if reviewerGroup == 2:
-        query = "SELECT * from applicant_information where 2nd_reviewer_accepted IS NULL and 2nd_reviewer_id =" \
-                f" {reviewerId}"
-    elif reviewerGroup == 3:
-        query = "SELECT * from applicant_information where 3rd_reviewer_accepted IS NULL and 3rd_reviewer_id =" \
-                f"{reviewerId}"
+    query = "SELECT * from applicant_information"
+    
+    ## Comment above and uncomment below during actual review time
+    # query = "SELECT * from applicant_information where accepted IS NULL"
+    # if reviewerGroup == 2:
+    #     query = "SELECT * from applicant_information where 2nd_reviewer_accepted IS NULL and 2nd_reviewer_id =" \
+    #             f" {reviewerId}"
+    # elif reviewerGroup == 3:
+    #     query = "SELECT * from applicant_information where 3rd_reviewer_accepted IS NULL and 3rd_reviewer_id =" \
+    #             f"{reviewerId}"
 
     df = createDBandTables.db_execute_fetch(query, rdf=True, dbName=dbName)
 

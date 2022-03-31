@@ -111,8 +111,13 @@ def interviewForm(intervieweeEmail: str, interviewerEmail: str, dbName: str) -> 
             return "Interview answers submitted"
 
 def start():
+    
+    # Initialization
+    if 'key' not in st.session_state:
+        st.session_state['key'] = 0
 
     state = sessionState.get(key=0)
+    
     traineeMailTitle = st.empty()
     traineeMail = st.empty()
     traineeInfo = st.empty()
@@ -135,12 +140,14 @@ def start():
                               " email below</p>", unsafe_allow_html=True)
 
     df = displayInterviewee.loadTrainee()
-
+    
     for col in df.columns:
         df[col + "_rank"] = df[col].rank(method="max", na_option='bottom', ascending=False, numeric_only=True)
         df[col + "_max"] = df[col + "_rank"].max()
 
-    intervieweeEmail = traineeMail.multiselect("", df['email'], key=str(state.key))
+    kval = st.session_state.key if 'key' not in st.session_state else 0
+    
+    intervieweeEmail = traineeMail.multiselect("", df['email'], key=str(kval))
 
     if intervieweeEmail:
         df = df.loc[df["email"] == intervieweeEmail[0]]
@@ -149,7 +156,7 @@ def start():
 
     interviewerMailTitle.markdown("<p style='font-size:22px; margin-bottom:-50px; border-radius:10px;'>Enter your "
                                   "10academy email below</p>", unsafe_allow_html=True)
-    interviewerEmail = interviewerMail.text_input("", key="int" + str(state.key))
+    interviewerEmail = interviewerMail.text_input("", key="int" + str(kval))
 
     if interviewerEmail:
         df = displayInterviewee.loadInterviwer()
