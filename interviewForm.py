@@ -151,7 +151,7 @@ def start():
 
     if intervieweeEmail:
         df = df.loc[df["email"] == intervieweeEmail[0]]
-        with traineeInfo.beta_expander("Show Trainee Info"):
+        with traineeInfo.expander("Show Trainee Info"):
             displayInterviewee.displayTraineeInfo(df)
 
     interviewerMailTitle.markdown("<p style='font-size:22px; margin-bottom:-50px; border-radius:10px;'>Enter your "
@@ -165,7 +165,7 @@ def start():
             interviewQuestions.markdown("<p style='color:#F63366;font-size:22px;'>This is not a registered 10academy"
                                         " email</p>", unsafe_allow_html=True)
         else:
-            with interviewQuestions.beta_expander("Show Trainee The Interview Form"):
+            with interviewQuestions.expander("Show Trainee The Interview Form"):
                 success = interviewForm(intervieweeEmail, interviewerEmail, "tenxdb")
                 if success:
                     submitted.write(success)
