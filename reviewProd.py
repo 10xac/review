@@ -60,7 +60,7 @@ def displayQuestionAndAnswer(reviewerId, reviewerGroup, email, dbName):
     last_page = len(applicant_info) // N
     # st.write(str(session_state.page_number))
 
-    prevCol, _, nextCol = st.beta_columns([1, 10, 1])
+    prevCol, _, nextCol = st.columns([1, 10, 1])
 
     if nextCol.button('Next'):
         if session_state.page_number + 1 > last_page:
@@ -119,7 +119,7 @@ def displayQuestionAndAnswer(reviewerId, reviewerGroup, email, dbName):
                 st.markdown("<p style='padding:10px; background-color:#F0F2F6;color:black;font-size:18px;"
                             f"border-radius:10px;'>{answer}</p>", unsafe_allow_html=True)
 
-        colB1, colB2 = st.beta_columns([1, .1])
+        colB1, colB2 = st.columns([1, .1])
 
         with colB1:
             pass
@@ -159,7 +159,7 @@ def verifyEmail(dbName):
                 st.write("You're not a reviewer, Enter a valid email")
 
             try:
-                with st.beta_expander("Show Review Form"):
+                with st.expander("Show Review Form"):
                     displayQuestionAndAnswer(res[0][0], res[0][4], email, dbName)
             except IndexError as e:
                 st.write("You have not been assigned any applicants to review")

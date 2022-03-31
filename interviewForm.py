@@ -86,7 +86,7 @@ def interviewForm(intervieweeEmail: str, interviewerEmail: str, dbName: str) -> 
         predictOutStandingSocialContribution = st.radio("", ("", "Absolutely", "Very Sure", "Sure", "Not Sure"),
                                                         key="social contribution")
 
-        colB1, colB2 = st.beta_columns([1, .1])
+        colB1, colB2 = st.columns([1, .1])
 
         with colB1:
             pass
@@ -128,7 +128,7 @@ def start():
 
     submitted = st.empty()
 
-    colB1, colB2 = st.beta_columns([1, .1])
+    colB1, colB2 = st.columns([1, .1])
 
     with colB1:
         pass

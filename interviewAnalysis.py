@@ -78,7 +78,7 @@ def displayResults(df: pd.DataFrame):
     dfYes = dfYesNo[dfYesNo["suitable"] == "yes"].drop(["suitable", "count"], axis=1).reset_index(drop=True)
     dfNo = dfYesNo[dfYesNo["suitable"] == "no"].drop(["suitable", "count"], axis=1).reset_index(drop=True)
 
-    yes, no, maybe = st.beta_columns([1, 1, 1])
+    yes, no, maybe = st.columns([1, 1, 1])
     with yes:
         st.write(f"### Outright Yes {dfYes.shape[0]}/{total}")
         st.write(dfYes)
@@ -103,10 +103,10 @@ def first_layer(df: pd.DataFrame):
 
     """
     st.text(f"Total Trainee Interviewed:    {df['interviewee_email'].nunique()}")
-    suitable, suitable2 = st.beta_columns([1, 1])
-    job_readineess, grad = st.beta_columns([1, 1])
-    first_interview_pass, social = st.beta_columns([1, 1])
-    gender, nationality = st.beta_columns([1, 1])
+    suitable, suitable2 = st.columns([1, 1])
+    job_readineess, grad = st.columns([1, 1])
+    first_interview_pass, social = st.columns([1, 1])
+    gender, nationality = st.columns([1, 1])
     with suitable:
         first_plot_bar(df, 'suitable')
     with suitable2:
@@ -142,10 +142,10 @@ def insight_per_interviewee(df: pd.DataFrame):
     interviewee_email = st.selectbox("Select Email of the interviewee ", list(df['interviewee_email'].unique()))
     data = df.query(f"interviewee_email == '{interviewee_email}' ")
 
-    with st.beta_expander(f"show {interviewee_email} interview data"):
-        suitable1, job_readineess1 = st.beta_columns([1, 1])
-        first_interview_pass1, grad1 = st.beta_columns([1, 1])
-        social1, _ = st.beta_columns([1, 1])
+    with st.expander(f"show {interviewee_email} interview data"):
+        suitable1, job_readineess1 = st.columns([1, 1])
+        first_interview_pass1, grad1 = st.columns([1, 1])
+        social1, _ = st.columns([1, 1])
         with suitable1:
             plot_bar(data, 'suitable')
         with job_readineess1:
