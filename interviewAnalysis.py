@@ -3,6 +3,7 @@ import plotly.express as px
 import streamlit as st
 import displayInterviewee
 import createDBandTables
+import db_functions
 
 def loadInterview() -> pd.DataFrame:
     """
@@ -19,7 +20,7 @@ def loadInterview() -> pd.DataFrame:
     """
     dbName = "tenxdb"
     query = "SELECT * FROM ApplicantInterviewResult"
-    df = createDBandTables.db_execute_fetch(query, rdf=True, dbName=dbName)
+    df = db_functions.db_execute_fetch(query, rdf=True, dbName=dbName)
     return df
 
 def plot_bar(df: pd.DataFrame, col_name: str):
