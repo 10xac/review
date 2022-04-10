@@ -160,7 +160,7 @@ def start():
 
     if interviewerEmail:
         df = displayInterviewee.loadInterviwer()
-        df = df.loc[df["email"] == interviewerEmail]
+        df = df.loc[df["reviewer_email"] == interviewerEmail]
         if len(df) == 0:
             interviewQuestions.markdown("<p style='color:#F63366;font-size:22px;'>This is not a registered 10academy"
                                         " email</p>", unsafe_allow_html=True)

@@ -1,28 +1,30 @@
 from botocore.exceptions import ClientError
 import streamlit as st
-import createDBandTables
+import db_functions
 import sessionState
 import interviewForm
 import interviewAnalysis
 
 st. set_page_config(layout="wide", page_title="Review and Interview")
+@st.cache(suppress_st_warning=True)
+def getReviewerAppli(reviewerId, reviewerGroup, dbName):
 
-def getReviewerAppli(reviewerId, reviewerGroup, dbName ):
-
-    query = f"SELECT * from applicant_information"
-    df = createDBandTables.db_execute_fetch(query, rdf=True, dbName=dbName)
-    df.drop(['2nd_reviewer_id', '2nd_reviewer_accepted', '3rd_reviewer_id', '3rd_reviewer_accepted'], inplace=True,
+    query = "SELECT * from applicant_information WHERE batch = \"batch-5\" "
+    df = db_functions.db_execute_fetch(query, rdf=True, dbName=dbName)
+    print("______________________",len(df))
+    df.drop(['time_stamp','firstname','email','city','nationality','date_of_birth','gender','2nd_reviewer_id', '2nd_reviewer_accepted', '3rd_reviewer_id', '3rd_reviewer_accepted'], inplace=True,
             axis=1)
-
+   
     if reviewerGroup == 2:
         query = f"SELECT * from applicant_information where 2nd_reviewer_id = {reviewerId}"
-        df = createDBandTables.db_execute_fetch(query, rdf=True, dbName=dbName)
-        df.drop(['3rd_reviewer_id', 'accepted', '3rd_reviewer_accepted'], inplace=True, axis=1)
-
+        df = db_functions.db_execute_fetch(query, rdf=True, dbName=dbName)
+       
+        df.drop(['time_stamp','firstname','email','city','nationality','date_of_birth','gender','batch','3rd_reviewer_id', 'accepted', '3rd_reviewer_accepted'], inplace=True, axis=1)
+        
     elif reviewerGroup == 3:
         query = f"SELECT * from applicant_information where 3rd_reviewer_id = {reviewerId}"
-        df = createDBandTables.db_execute_fetch(query, rdf=True, dbName=dbName)
-        df.drop(['2nd_reviewer_id', 'accepted', '2nd_reviewer_accepted'], inplace=True, axis=1)
+        df = db_functions.db_execute_fetch(query, rdf=True, dbName=dbName)
+        df.drop(['time_stamp','firstname','email','city','nationality','date_of_birth','gender','batch','2nd_reviewer_id', 'accepted', '2nd_reviewer_accepted'], inplace=True, axis=1)
 
     return df
 
@@ -39,14 +41,16 @@ def getNotDoneReviews(reviewerId, reviewerGroup, dbName):
         query = "SELECT * from applicant_information where 3rd_reviewer_accepted IS NULL and 3rd_reviewer_id =" \
                 f"{reviewerId}"
 
-    df = createDBandTables.db_execute_fetch(query, rdf=True, dbName=dbName)
+    df = db_functions.db_execute_fetch(query, rdf=True, dbName=dbName)
 
     return len(df)
 
 def displayQuestionAndAnswer(reviewerId, reviewerGroup, email, dbName):
 
-    conn, cur = createDBandTables.DBConnect(dbName)
+    conn = db_functions.db_connect(dbName)
+    cur = conn.cursor()
     applicant_info = getReviewerAppli(reviewerId, reviewerGroup, dbName)
+    #
     notDone = getNotDoneReviews(reviewerId, reviewerGroup, dbName)
     remaining = len(applicant_info) - notDone
     percentage = remaining / len(applicant_info) * 100
@@ -58,10 +62,11 @@ def displayQuestionAndAnswer(reviewerId, reviewerGroup, email, dbName):
         session_state = sessionState.get(email=email, page_number=0)
 
     last_page = len(applicant_info) // N
+    
     # st.write(str(session_state.page_number))
 
     prevCol, _, nextCol = st.columns([1, 10, 1])
-
+    
     if nextCol.button('Next'):
         if session_state.page_number + 1 > last_page:
             session_state.page_number = last_page
@@ -77,12 +82,14 @@ def displayQuestionAndAnswer(reviewerId, reviewerGroup, email, dbName):
     # Get start and end indices of the next page of the dataframe
     start_idx = session_state.page_number * N
     end_idx = (1 + session_state.page_number) * N
- 
+    print(applicant_info)
     row = applicant_info.iloc[start_idx:end_idx]
+    
     applicant_index = row["applicant_id"].values[0]
-
+   
     with st.form(key='review-form'):
         st.write(f"You have reviewed {remaining} / {len(applicant_info)} so far; {percentage:.2f}% done ")
+         
         for question in row.columns:
             if question == "3rd_reviewer_id" or question == "2nd_reviewer_id":
                 continue
@@ -93,6 +100,8 @@ def displayQuestionAndAnswer(reviewerId, reviewerGroup, email, dbName):
                 st.write(f"## {question.capitalize()}")
 
             answer = str(row[question].values[0])
+            
+           
 
             if answer == 'None' or answer == '':
                 if question == 'accepted' or question == "2nd_reviewer_accepted" or question == "3rd_reviewer_accepted":
@@ -113,9 +122,11 @@ def displayQuestionAndAnswer(reviewerId, reviewerGroup, email, dbName):
                     chanQue = "Change this applicant's status to"
                     st.markdown(f"<p style='font-size:22px;border-radius:10px;'>{chanQue}</p>", unsafe_allow_html=True)
                     acceptedValue = st.radio("", ("Yes", "No", "Maybe"))
+                    
                     continue
 
                 answer = '\r\n'.join([x for x in answer.splitlines() if x.strip()])
+               
                 st.markdown("<p style='padding:10px; background-color:#F0F2F6;color:black;font-size:18px;"
                             f"border-radius:10px;'>{answer}</p>", unsafe_allow_html=True)
 
@@ -128,6 +139,7 @@ def displayQuestionAndAnswer(reviewerId, reviewerGroup, email, dbName):
 
         if submitButton:
             st.write("This Applicant has been reviewed")
+            # print (acceptedValue)
             query = """UPDATE applicant_information
                     SET accepted = (%s)
                     WHERE applicant_id = (%s)"""
@@ -148,18 +160,20 @@ def displayQuestionAndAnswer(reviewerId, reviewerGroup, email, dbName):
 
 
 def verifyEmail(dbName):
-    st.title("2021 Applicants Review")
+    st.title("2022 Applicants Review")
     email = st.text_input("Enter Your 10academy Email below")
 
     if email:
         try:
             query = f"SELECT * fROM reviewer WHERE reviewer_email = '{email}'"
-            res = createDBandTables.db_execute_fetch(query, rdf=False, dbName=dbName)
+            res = db_functions.db_execute_fetch(query, rdf=False, dbName=dbName)
+       
             if len(res) == 0:
                 st.write("You're not a reviewer, Enter a valid email")
 
             try:
                 with st.expander("Show Review Form"):
+                    
                     displayQuestionAndAnswer(res[0][0], res[0][4], email, dbName)
             except IndexError as e:
                 st.write("You have not been assigned any applicants to review")
@@ -169,11 +183,11 @@ def verifyEmail(dbName):
             st.write("You're not a reviewer, Enter a valid email")
             raise e
 
-reviewType = st.sidebar.selectbox("Review Stage", ["Admission to week 0", "Interview", "Interview Analysis"])
+reviewType = st.sidebar.selectbox("Review Stage", ["Application review", "Interview"])
 
-if reviewType == "Admission to week 0":
-    verifyEmail('review')
+if reviewType == "Application review":
+    verifyEmail('tenxdb')
 elif reviewType == "Interview":
     interviewForm.start()
-elif reviewType == "Interview Analysis":
-    interviewAnalysis.main()
+# elif reviewType == "Interview Analysis":
+#     interviewAnalysis.main()

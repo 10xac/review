@@ -2,7 +2,7 @@ import boto3
 import base64
 import json
 import gspread
-from df2gspread import df2gspread as d2g
+# from df2gspread import df2gspread as d2g
 import pandas as pd
 import mysql.connector as mysql
 from mysql.connector import Error
@@ -173,6 +173,6 @@ def writeToGsheet():
     df = combinedfs()
     spreadsheetKey = "12LNLYLbkEhgVMs5yUMxQp_DmxY_k9s6Hy5rCVK_BEaA"
     sheetName = "sheet 1"
-    d2g.upload(df, spreadsheetKey, sheetName, credentials, row_names=True)
+# d2g.upload(df, spreadsheetKey, sheetName, credentials, row_names=True)
 
 combinedfs()

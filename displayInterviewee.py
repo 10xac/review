@@ -2,17 +2,20 @@ import math
 import streamlit as st
 import pandas as pd
 import createDBandTables
+import db_functions
 
 def loadTrainee() -> pd.DataFrame:
     dbName = "tenxdb"
-    query = "SELECT * FROM ApplicantInterview"
-    df = createDBandTables.db_execute_fetch(query, rdf=True, dbName=dbName)
+    # query = "SELECT * FROM ApplicantInterview"
+    query = "SELECT * FROM applicant_information"
+    df = db_functions.db_execute_fetch(query, rdf=True, dbName=dbName)
     return df
 
 def loadInterviwer() -> pd.DataFrame:
     dbName = "tenxdb"
-    query = "SELECT * FROM ApplicantInterviewer"
-    df = createDBandTables.db_execute_fetch(query, rdf=True, dbName=dbName)
+    # query = "SELECT * FROM ApplicantInterviewer"
+    query = "SELECT * FROM reviewer"
+    df = db_functions.db_execute_fetch(query, rdf=True, dbName=dbName)
     return df
 
 def displayTraineeInfo(df: pd.DataFrame) -> None:
