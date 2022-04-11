@@ -20,7 +20,7 @@ import os
 from get_applicants import split_dataframe
 
 def get_dbauth():
-    dbauth = get_auth(ssmkey='b4test-mysql',
+    dbauth = get_auth(ssmkey='tenx/db/pjmatch',
                         envvar='',
                         fconfig=f'{cpath}/.env/dbconfig.json')
 
@@ -84,31 +84,54 @@ def createTables(dbName):
             print(ex)
     conn.commit()
     cur.close()
+    
+
 def insert_data(dbname="tenxdb"):
-    try:
+    # try:
         db = db_connect()
         
         
         appliInfo = process_dataframe()
         appliInfo['time_stamp'] = appliInfo['time_stamp'].apply(lambda x: str(x))
-        
-        
-        dbauth = get_dbauth()
-        
-        host=dbauth['host']
-        password=dbauth['password']
-        username=dbauth['username']            
-        database  = dbname 
-                                        
-        engine = create_engine(f'mysql+mysqlconnector://{username}:{password}@{host}/{dbname}')
-        with engine.connect() as conn, conn.begin():
+        print(appliInfo.shape)
+     
+        for i, row in appliInfo.iterrows():  
+              
+            sqlQuery = ''' INSERT INTO applicant_information(time_stamp, email, firstname, english_level, commitment, self_funding,
+                            graduated, pay_it_forward, renowned_idea, nationality, city, date_of_birth,
+                            gender, education_level, field_of_study, name_of_instituition, honours,
+                            github_profile, referee_name, previously_applied, mode_of_discovery,
+                            work_experience, work_experience_details, python_proficiency, sql_proficiency, 
+                            statistics_proficiency, algebra_proficiency, project_compeleted, data_science_profile, 
+                            self_taught, Accept_terms_and_conditions, occupation, highest_completed_level_of_Education, graduation_date, linkedIn_profile, reason_to_join, 
+                            previously_applied_batch, stage_to_pevious_application,
+                            familyname, work_experience_month, batch)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s,%s, %s,
+                                    %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                                    %s, %s, %s, %s, %s, %s, %s, %s, %s, 
+                                    %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                                    %s, %s,%s,%s ,%s)
+                '''
             
-            appliInfo.to_sql('applicant_information', conn, if_exists='replace', index=False)
-        db.commit()
-        print("All records are submitted successfully")
-        
-    except Exception as e:
-        print("unable to insert data", e)
+            cur =db.cursor(prepared=True) 
+            data = (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11],
+                    row[12], row[13], row[14], row[15], row[16], row[17], row[18], row[19], row[20], row[21], row[22],
+                    row[23], row[24], row[25], row[26], row[27], row[28], row[29], row[30], row[31], row[32], row[33], 
+                    row[34], row[35],row[36], row[37], row[38], row[39], row[40])
+            
+            try:
+                # Execute the SQL command
+                
+                cur.execute(sqlQuery,data)
+                # Commit your changes in the database
+                db.commit()
+                print("All records are submitted successfully")
+            except Exception as e:
+                print("Error: ", e)
+                # Rollback in case there is any error
+                db.rollback()       
+  
+    
         
 def db_execute_fetch(*args, many=False, tablename='', rdf=True, **kwargs):
     connection = db_connect(**kwargs)
@@ -157,6 +180,7 @@ def fromTenx():
 
 def update_appli_with_reviewer(dbName= 'tenxdb'):
     appliInfo = fromTenx()
+    
     reviewersTwo = getReviewers(2, dbName)
     intervalTwo = len(appliInfo) // len(reviewersTwo)
     reviewTwoId = [reviewerTwo[0] for reviewerTwo in reviewersTwo]
@@ -167,7 +191,7 @@ def update_appli_with_reviewer(dbName= 'tenxdb'):
     reviewThreeId = [reviewerThree[0] for reviewerThree in reviewersThree]
     
     conn = db_connect(dbName)
-    cur =conn.cursor()   
+    cur =conn.cursor(prepared=True)   
     for i, row in appliInfo.iterrows():
         
         applicant_id = row['applicant_id']
@@ -231,28 +255,6 @@ def alter_table( **kwargs):
         print("Unable to alter",e)
 
 
-def create_table_(**kwargs):
-        
-            db = db_connect(**kwargs)
-            cursor = db.cursor()
-            sqlFile = 'createMYSQLTables.sql'
-            fd = open(sqlFile, 'r')
-            readSqlFile = fd.read()
-            fd.close()
-
-            sqlCommands = readSqlFile.split(';')
-            for command in sqlCommands:
-                print(command)
-                try:
-                    res = cursor.execute(command)
-            
-                    print("Command skipped: ", command)
-            
-        
-                except Exception as e:
-                    print("unable to create table", e)
-            db.commit()
-            cursor.close()
  
 def writeToReview(dbName):
     conn = db_connect(dbName)
@@ -307,11 +309,17 @@ if __name__ == "__main__":
     # host_connect(dbName='tenxdb')
     
     # createTables(dbName='tenxdb')
-    # insert_data()
-    # query = "describe application_information"
     
-    query = "select * from applicant_information"
-    # # update_appli_with_reviewer()
+    # insert_data()
+    
+    
+    # query = "describe applicant_information"
+    
+    # # batch ="batch-5"
+    reviewerId = 4
+    query = f"SELECT * from applicant_information where 3rd_reviewer_id = {reviewerId}" 
+    
+    # update_appli_with_reviewer()
     df = db_execute_fetch(query, rdf=True, dbName='tenxdb')
-    print(df['2nd_reviewer_id'].unique())
+    print(df)
    

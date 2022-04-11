@@ -1,5 +1,5 @@
 
-from createDBandTables import DBConnect, db_execute_fetch,get_db_engine
+from createDBandTables import DBConnect, db_execute_fetch
 from gdive_util import gsheet
 import datetime
 import sqlalchemy as sqla
@@ -86,5 +86,8 @@ def loadInterviwer():
 
 if __name__ == "__main__":
     process_dataframe ()
+    # fromSheetToReview('tenxdb')
+    # loadInterviwer()
+    # process_dataframe ()
     # fromSheetToReview('tenxdb')
     # loadInterviwer()
