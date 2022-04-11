@@ -17,6 +17,7 @@ email = \"\"\n\
 " > /root/.streamlit/credentials.toml'
 
 RUN bash -c 'mv ./config.toml /root/.streamlit/config.toml'
+RUN python3 gencred.py
 
 ENTRYPOINT [ "streamlit", "run", "reviewProd.py", \
     "--server.port", "80", \
