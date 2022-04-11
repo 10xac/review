@@ -66,39 +66,39 @@ CREATE TABLE `applicant_information` (
 -- Table `applicantInterviewResult`
 -- -----------------------------------------------------
 
--- CREATE TABLE `ApplicantInterviewResult` (
--- 	`interviewer_email` varchar(255) NOT NULL,
--- 	`interviewee_email` varchar(255) NOT NULL,
--- 	`on_time` BOOLEAN NOT NULL,
--- 	`communication_skill` TEXT(50) NOT NULL,
--- 	`q1` TEXT(50) NOT NULL,
--- 	`q2` TEXT(50) NOT NULL,
--- 	`q3` TEXT(50) NOT NULL,
--- 	`payforward_confirmation` BOOLEAN NOT NULL,
--- 	`fulltime_confirmation` BOOLEAN NOT NULL,
--- 	`selffund_confirmation` BOOLEAN NOT NULL,
--- 	`mlflow_design_understanding` TEXT(50) NOT NULL,
--- 	`code_understanding` TEXT(50) NOT NULL,
--- 	`comments` TEXT(200) NOT NULL,
--- 	`suitable` BOOLEAN NOT NULL,
--- 	`predict_job_readiness` TEXT(50) NOT NULL,
--- 	`predict_distinction_graduation` TEXT(50) NOT NULL,
--- 	`predict_first_job_interview_pass` TEXT(50) NOT NULL,
--- 	`predict_outstanding_social_contribution` TEXT(50) NOT NULL
--- );
+CREATE TABLE `ApplicantInterviewResult` (
+	`interviewer_email` varchar(255) NOT NULL,
+	`interviewee_email` varchar(255) NOT NULL,
+	`on_time` BOOLEAN NOT NULL,
+	`communication_skill` TEXT(50) NOT NULL,
+	`q1` TEXT(50) NOT NULL,
+	`q2` TEXT(50) NOT NULL,
+	`q3` TEXT(50) NOT NULL,
+	`payforward_confirmation` BOOLEAN NOT NULL,
+	`fulltime_confirmation` BOOLEAN NOT NULL,
+	`selffund_confirmation` BOOLEAN NOT NULL,
+	`mlflow_design_understanding` TEXT(50) NOT NULL,
+	`code_understanding` TEXT(50) NOT NULL,
+	`comments` TEXT(200) NOT NULL,
+	`suitable` BOOLEAN NOT NULL,
+	`predict_job_readiness` TEXT(50) NOT NULL,
+	`predict_distinction_graduation` TEXT(50) NOT NULL,
+	`predict_first_job_interview_pass` TEXT(50) NOT NULL,
+	`predict_outstanding_social_contribution` TEXT(50) NOT NULL
+);
 
--- -- -----------------------------------------------------
--- -- Table `reviewer`
--- -- -----------------------------------------------------
+-- -----------------------------------------------------
+-- Table `reviewer`
+-- -----------------------------------------------------
 
--- CREATE TABLE `reviewer` (
--- 	`reviewer_id` INT(4) NOT NULL AUTO_INCREMENT,
--- 	`reviewer_email` varchar(255) NOT NULL UNIQUE,
--- 	`firstname` varchar(255) NOT NULL,
--- 	`lastname` varchar(255) NOT NULL,
--- 	`reviewer_group` varchar(255) NOT NULL,
--- 	PRIMARY KEY (`reviewer_id`)
--- );
+CREATE TABLE `reviewer` (
+	`reviewer_id` INT(4) NOT NULL AUTO_INCREMENT,
+	`reviewer_email` varchar(255) NOT NULL UNIQUE,
+	`firstname` varchar(255) NOT NULL,
+	`lastname` varchar(255) NOT NULL,
+	`reviewer_group` varchar(255) NOT NULL,
+	PRIMARY KEY (`reviewer_id`)
+);
 
 
 
