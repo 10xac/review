@@ -78,16 +78,21 @@ def displayQuestionAndAnswer(reviewerId, reviewerGroup, email, dbName):
     start_idx = session_state.page_number * N
     end_idx = (1 + session_state.page_number) * N
 
-    print(f'-------reviewerId, reviewerGroup, email: {reviewerId}, {reviewerGroup}, {email}')
-    print(f'-------remaining, percentage: {remaining}, {percentage}')
-    print(f'-------current page is for start_idx:end_idx: {start_idx}, {end_idx}')
-    print(f'------applicants_df.shape: {applicant_info.shape}')
+    st.write(f'-------reviewerId, reviewerGroup, email: {reviewerId}, {reviewerGroup}, {email}')
+    st.write(f'-------remaining, percentage: {remaining}, {percentage}')
+    st.write(f'-------current page is for start_idx:end_idx: {start_idx}, {end_idx}')
+    st.write(f'------applicants_df.shape: {applicant_info.shape}')
     
     row = applicant_info.iloc[start_idx:end_idx]
     if row.empty:
-        row = applicant_info.iloc[0]
-        
-    applicant_index = row["applicant_id"].values[0]
+        row = applicant_info.iloc[0:1]
+
+    try:
+        applicant_index = row["applicant_id"].values[0]
+        st.write('row applicant id: st.series type')        
+    except:
+        applicant_index = row["applicant_id"]
+        st.write('row applicant id: str type')        
 
     with st.form(key='review-form'):
         st.write(f"You have reviewed {remaining} / {len(applicant_info)} so far; {percentage:.2f}% done ")
@@ -181,7 +186,9 @@ reviewType = st.sidebar.selectbox("Review Stage", ["Admission to week 0", "Inter
 
 if reviewType == "Admission to week 0":
     verifyEmail('review')
+
 elif reviewType == "Interview":
     interviewForm.start()
+    
 elif reviewType == "Interview Analysis":
     interviewAnalysis.main()
