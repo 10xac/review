@@ -5,6 +5,8 @@ import db.databaseManagement as db
 import ui.userManagement as userManagement
 import page
 
+form_key = "my_form"
+        
 def signin():
     """A form validator which is used to get email and password
 
@@ -13,27 +15,30 @@ def signin():
 
     Returns:
         -
-    """ 
-    with st.sidebar.form(key = 'my_form'):
+    """
+    
+    with st.form(key = form_key):
+        st.header("Welcome to 10Academy Application Review Engine")
+        st.write("")
         email_text_input = st.text_input(label = 'Email')
         password_text_input = st.text_input(label = 'Password', type = 'password')
         m = st.markdown("""
-        <style>
+        <style>        
         div.stButton > button:first-child {
             background-color: rgb(255, 77, 77);
             color:#ffffff;
-            font-size:30px;
+            font-size:15px;
             width:100%;
         }
         div.stButton > button:hover {
             background-color: #ffffff;
             color:rgb(255, 77, 77);
-            font-size:30px;
+            font-size:15px;
 
             }
         </style>""", unsafe_allow_html=True)
         submit_button = st.form_submit_button(label = 'Submit')
-        
+
         if submit_button:
             user = db.login_user(email_text_input,
                                  hash.check_hashes(password_text_input,
@@ -86,28 +91,33 @@ def sidebarselection(selector):
     """
 
 
-    if(st.session_state["selector"] == "notselected"):
-        m = st.markdown("""
-        <style>
-        div.stButton > button:first-child {
-            background-color: rgb(255, 77, 77);
-            color:#ffffff;
-            font-size:30px;
-            width:100%;
-        }
-        div.stButton > button:hover {
-            background-color: #ffffff;
-            color:rgb(255, 77, 77);
-            font-size:30px;
-            }
-        </style>""", unsafe_allow_html=True)
-        st.sidebar.button("Login", 
-                          key = 'signin', 
-                          on_click = changeselectorStatus(
-                              st.session_state['selector'],"selected")
-                         )       
-    else:
-        signin()
+    # if(st.session_state["selector"] == "notselected"):
+    #     m = st.markdown("""
+    #     <style>
+    #     div.stButton > button:first-child {
+    #         background-color: rgb(255, 77, 77);
+    #         color:#ffffff;
+    #         font-size:30px;
+    #         width:50%;
+    #     }
+    #     div.stButton > button:hover {
+    #         background-color: #ffffff;
+    #         color:rgb(255, 77, 77);
+    #         font-size:30px;
+    #         }
+    #     </style>""", unsafe_allow_html=True)
+    #     st.button("Login", 
+    #           key = 'signin', 
+    #           on_click = changeselectorStatus(
+    #               st.session_state['selector'],"selected")
+    #     )
+    col1, col2, col3 = st.columns(3)
+    with col2:    
+        #if(st.session_state["selector"] == "notselected"):
+        if form_key not in st.session_state.keys():        
+            st.session_state['selector'] = "selected"            
+            signin()
+        
         
 def session_start():
     """initial get to the page
@@ -119,7 +129,8 @@ def session_start():
         -
     """ 
     db.create_usertable()
-
+    #db.add_userdata('yabebal@10academy.org','amestkilo','superAdmin')
+    
     if "login" not in st.session_state or st.session_state["login"] == "unsuccess":
         print("lp.login.status=unsuccess")
         
@@ -128,7 +139,7 @@ def session_start():
         if "selector" not in st.session_state:
             st.session_state["selector"] = "notselected"
             
-        landingScreen()
+        #landingScreen()
         sidebarselection(st.session_state["selector"])
         st.session_state["hasLoggedIn"] = False
         

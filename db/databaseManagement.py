@@ -13,7 +13,7 @@ def create_usertable():
 	conn.commit()
 
 def add_userdata(username,password,status):
-	c.execute('INSERT INTO userstable (username,password,status) VALUES (?,?,?)',(username,password,status))
+	c.execute('REPLACE INTO userstable (username,password,status) VALUES (?,?,?)',(username,password,status))
 	conn.commit()
 
 def login_user(username,password):

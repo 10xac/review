@@ -14,7 +14,7 @@ import utils.s3_utils as s3data
 
 #
 import landingPage as lp
-import b5_test_review.py as b5
+import b5_test_review as b5
 
 #
 # configure landing page
