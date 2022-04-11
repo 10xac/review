@@ -11,6 +11,35 @@ from botocore.exceptions import ClientError
 
 region_name = "eu-west-1"
 
+def write_aws_config():
+    #check if /app exists
+    home = os.environ.get('HOME','~')
+    rdir = os.path.join(home, '.aws')
+    fname = f'{rdir}/config'
+    if not os.path.exists(fname):
+        os.makedirs(rdir,exist_ok=True)
+        print(f'writing aws config file to: {fname}')        
+        with open(fname, 'a') as f:
+            # f.write('[profile Jobmatch ] \n')
+            # f.write('s3 = \n')
+            # f.write('     signature_version = s3v4 \n')
+            # f.write(f'region = {region_name} \n')       
+            # f.write('output = json \n')
+
+            f.write('[profile default] \n')
+            #f.write('s3 = \n')
+            #f.write('     signature_version = s3v4 \n')
+            f.write(f'region = {region_name} \n')
+            #f.write('output = json \n')            
+           
+    else:
+        print(f'{fname} exists')
+
+    
+    return None
+
+region_name = "eu-west-1"
+
 def init_aws_session():
     # Create a Secrets Manager client
     # Create a Secrets Manager client
@@ -21,24 +50,6 @@ def init_aws_session():
     )
 
     return client
-
-
-def create_secret(secret_name, key, value):
-    client = init_aws_session()
-
-    # get original secrets
-    res = client.update_secret(SecretId=secret_name, SecretString=json.dumps({key: value}))
-
-    return res
-
-def update_secret(secret_name, kv):
-    client = init_aws_session()
-    # get original secrets
-    secret = get_secret(secret_name)
-    secret.update(kv)
-    res = client.update_secret(SecretId=secret_name, SecretString=json.dumps(secret))
-    #print(secret)
-    return res
 
 
 def get_ssm_secret(secret_name):
@@ -161,20 +172,40 @@ def get_auth(ssmkey=None, envvar=None, fconfig=None):
 
     return {}
 
-if __name__ == "__main__":
+#write .aws/config if it does not exist
+_ = write_aws_config()
+
+try:    
+    #path = os.path.dirname(os.path.realpath(__file__))
+    #path = os.path.dirname(path)
+    path = os.environ.get('HOME','~')
+
+    print('**Getting config files from ssm if they it is not already in .env folder ..')
+
     
-    path = os.path.dirname(os.path.realpath(__file__))
-    path = os.path.dirname(path)
-
-    dbauth = get_auth(ssmkey='tenx/db/pjmatch',
-
+    dbauth = get_auth(ssmkey='b4test-mysql',
                       envvar='RDS_CONFIG',
                       fconfig=f'{path}/.env/dbconfig.json')
-    print('**Getting config files from ssm if they it is not already in .env folder ..')
-    print('=====================================')
-    _ = get_auth(ssmkey="airtable-api-config",
-                 fconfig='.env/airtable_config.json',
-                 envvar='AIRTABLE_CONFIG',
+    print(f'==tenx/db/pjmatch config saved: {path}/.env/dbconfig.json')
+    
+    # #
+    # _ = get_auth(ssmkey="airtable-api-config",
+    #              fconfig=f'{path}/.env/airtable_config.json',
+    #              envvar='AIRTABLE_CONFIG',
+    #              )
+    # print(f'==airtable-api-config config saved: {path}/.env/airtable_config.json')
+
+    #
+    _ = get_auth(ssmkey="gspread/config",
+                 fconfig=f'{path}/.env/gclass_credentials.json',
+                 envvar='GSPREAD_CONFIG',
                  )
-#print(dbauth)
-	
+    print(f'==gspread/config config saved: f{path}/.env/gclass_credentials.json!')
+    
+except Exception as e:
+    print('ERROR: Unable to fetch ssm params!')
+    print(e)
+    
+
+
+
