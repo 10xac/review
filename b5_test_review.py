@@ -6,26 +6,26 @@ import interviewForm
 import interviewAnalysis
 
 st. set_page_config(layout="wide", page_title="Review and Interview")
-@st.cache(suppress_st_warning=True)
+# @st.cache(suppress_st_warning=True)
 def getReviewerAppli(reviewerId, reviewerGroup, dbName):
 
     query = "SELECT * from applicant_information WHERE batch = \"batch-5\" "
     df = db_functions.db_execute_fetch(query, rdf=True, dbName=dbName)
-    print("______________________",len(df))
+    print("______________________data for ",len(df))
     df.drop(['time_stamp','firstname','email','city','nationality','date_of_birth','gender','2nd_reviewer_id', '2nd_reviewer_accepted', '3rd_reviewer_id', '3rd_reviewer_accepted'], inplace=True,
             axis=1)
-   
+    print ("reviewwer_id",reviewerId )
     if reviewerGroup == 2:
-        query = f"SELECT * from applicant_information where 2nd_reviewer_id = {reviewerId}"
+        query = f"SELECT * from applicant_information where 2nd_reviewer_id = {reviewerId} AND batch = \"batch-5\""
         df = db_functions.db_execute_fetch(query, rdf=True, dbName=dbName)
-       
+        print(df)
         df.drop(['time_stamp','firstname','email','city','nationality','date_of_birth','gender','batch','3rd_reviewer_id', 'accepted', '3rd_reviewer_accepted'], inplace=True, axis=1)
-        
+        print(len(df))
     elif reviewerGroup == 3:
         query = f"SELECT * from applicant_information where 3rd_reviewer_id = {reviewerId}"
         df = db_functions.db_execute_fetch(query, rdf=True, dbName=dbName)
         df.drop(['time_stamp','firstname','email','city','nationality','date_of_birth','gender','batch','2nd_reviewer_id', 'accepted', '2nd_reviewer_accepted'], inplace=True, axis=1)
-
+        print(len(df))
     return df
 
 def getNotDoneReviews(reviewerId, reviewerGroup, dbName):
@@ -82,10 +82,11 @@ def displayQuestionAndAnswer(reviewerId, reviewerGroup, email, dbName):
     # Get start and end indices of the next page of the dataframe
     start_idx = session_state.page_number * N
     end_idx = (1 + session_state.page_number) * N
-    print(applicant_info)
+    
     row = applicant_info.iloc[start_idx:end_idx]
     
     applicant_index = row["applicant_id"].values[0]
+    print("_____________",applicant_index)
    
     with st.form(key='review-form'):
         st.write(f"You have reviewed {remaining} / {len(applicant_info)} so far; {percentage:.2f}% done ")
@@ -143,7 +144,6 @@ def displayQuestionAndAnswer(reviewerId, reviewerGroup, email, dbName):
             query = """UPDATE applicant_information
                     SET accepted = (%s)
                     WHERE applicant_id = (%s)"""
-
             if reviewerGroup == 2:
                 query = """UPDATE applicant_information
                     SET 2nd_reviewer_accepted = (%s)
@@ -167,7 +167,7 @@ def verifyEmail(dbName):
         try:
             query = f"SELECT * fROM reviewer WHERE reviewer_email = '{email}'"
             res = db_functions.db_execute_fetch(query, rdf=False, dbName=dbName)
-       
+            
             if len(res) == 0:
                 st.write("You're not a reviewer, Enter a valid email")
 

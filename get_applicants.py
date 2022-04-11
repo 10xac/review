@@ -48,7 +48,7 @@ def process_dataframe ():
         # print (db_col)
         
       
-    print(df.shape)
+    print(df.columns)
     # new_df = pd.DataFrame(columns=df.columns)
     # new_df.loc[len(new_df)] = [str("test")] * 41
     return df
@@ -85,6 +85,6 @@ def loadInterviwer():
     return df
 
 if __name__ == "__main__":
-    # process_dataframe ()
-    fromSheetToReview('tenxdb')
+    process_dataframe ()
+    # fromSheetToReview('tenxdb')
     # loadInterviwer()
