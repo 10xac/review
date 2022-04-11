@@ -85,9 +85,8 @@ def loadInterviwer():
     return df
 
 if __name__ == "__main__":
+
     process_dataframe ()
     # fromSheetToReview('tenxdb')
     # loadInterviwer()
-    # process_dataframe ()
-    # fromSheetToReview('tenxdb')
-    # loadInterviwer()
+
