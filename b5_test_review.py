@@ -159,9 +159,11 @@ def displayQuestionAndAnswer(reviewerId, reviewerGroup, email, dbName):
             cur.close()
 
 
-def verifyEmail(dbName):
+def verifyEmail(dbName, email=None):
     st.title("2022 Applicants Review")
-    email = st.text_input("Enter Your 10academy Email below")
+    
+    if email is None:
+        email = st.text_input("Enter Your 10academy Email below")
 
     if email:
         try:
@@ -182,12 +184,3 @@ def verifyEmail(dbName):
         except ClientError as e:
             st.write("You're not a reviewer, Enter a valid email")
             raise e
-
-reviewType = st.sidebar.selectbox("Review Stage", ["Application review", "Interview"])
-
-if reviewType == "Application review":
-    verifyEmail('tenxdb')
-elif reviewType == "Interview":
-    interviewForm.start()
-# elif reviewType == "Interview Analysis":
-#     interviewAnalysis.main()
