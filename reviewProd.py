@@ -51,7 +51,7 @@ def displayQuestionAndAnswer(reviewerId, reviewerGroup, email, dbName):
     remaining = len(applicant_info) - notDone
     percentage = remaining / len(applicant_info) * 100
     N = 1
-
+    
     if remaining >= 1:
         session_state = sessionState.get(email=email, page_number=remaining)
     else:
@@ -77,8 +77,16 @@ def displayQuestionAndAnswer(reviewerId, reviewerGroup, email, dbName):
     # Get start and end indices of the next page of the dataframe
     start_idx = session_state.page_number * N
     end_idx = (1 + session_state.page_number) * N
- 
+
+    print(f'-------reviewerId, reviewerGroup, email: {reviewerId}, {reviewerGroup}, {email}')
+    print(f'-------remaining, percentage: {remaining}, {percentage}')
+    print(f'-------current page is for start_idx:end_idx: {start_idx}, {end_idx}')
+    print(f'------applicants_df.shape: {applicant_info.shape}')
+    
     row = applicant_info.iloc[start_idx:end_idx]
+    if row.empty:
+        row = applicant_info.iloc[0]
+        
     applicant_index = row["applicant_id"].values[0]
 
     with st.form(key='review-form'):
