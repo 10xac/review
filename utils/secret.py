@@ -89,16 +89,16 @@ def config_from_string(sdata,fname=None):
     #if os.path.exists('/app'):
     #    rdir = '/app'
 
-    #make dir  
-    if not os.path.dirname(fname):
-        fname = f'.env/{fname}'
-        
-    os.makedirs(os.path.dirname(fname),exist_ok=True)
-
-
     data = json.loads(sdata)
 
     if fname:
+        #make dir  
+        if not os.path.dirname(fname):
+            fname = f'~/.env/{fname}'        
+        
+        os.makedirs(os.path.dirname(fname),exist_ok=True)
+
+    
         print(f'writing {fname} file ..')
         #dump it to json file       
         with open(fname, 'w') as outfile:
@@ -107,7 +107,7 @@ def config_from_string(sdata,fname=None):
     return data
 
 
-def get_secret(pname, pvar=None,json=False):
+def get_secret(pname, pvar=None,json=False,fname=''):
     
     authData = None
     if pvar is not None:
@@ -117,7 +117,7 @@ def get_secret(pname, pvar=None,json=False):
             return authData
     
     
-    authData = config_from_string(get_ssm_secret(pname), fname=pname)
+    authData = config_from_string(get_ssm_secret(pname), fname=fname)
     #    
     return authData
     
@@ -139,19 +139,20 @@ def get_auth(ssmkey=None, envvar=None, fconfig=None):
     if envvar:            
         if os.environ.get(envvar,''): 
             try:
-                print(f'Getting auth {ssmkey} from aws secret manager ..')
-                auth = config_from_string(os.environ.get(envvar,''))
+                print(f'Getting {envvar} from environment ..')
+                auth = config_from_string(os.environ.get(envvar,''),fname=fconfig)
                 return auth
             except:
                 print(f'getting enn variable {envvar} failed!')
                 
     if ssmkey:
         try:
-            print(f'Getting {ssmkey} from aws secret manager ..')
-            auth = get_secret(ssmkey)
+            print(f'Getting auth {ssmkey} from aws secret manager and saving it to {fconfig} ..')            
+            auth = get_secret(ssmkey,fname=fconfig)
             return auth
-        except:
-            print(f'getting secret {ssmkey} from aws ssm failed!')
+        except Exception as e:
+            print(f'getting secret {ssmkey} from aws ssm failed! ')
+            #print(e)
             raise
 
     print('Crediential can not be obtained. Params are')
@@ -159,3 +160,19 @@ def get_auth(ssmkey=None, envvar=None, fconfig=None):
     raise
 
     return {}
+
+if __name__ == "__main__":
+    
+    path = os.path.dirname(os.path.realpath(__file__))
+    path = os.path.dirname(path)
+    dbauth = get_auth(ssmkey='tenx/db/pjmatch',
+                      envvar='RDS_CONFIG',
+                      fconfig=f'{path}/.env/dbconfig.json')
+    print('**Getting config files from ssm if they it is not already in .env folder ..')
+    print('=====================================')
+    _ = get_auth(ssmkey="airtable-api-config",
+                 fconfig='.env/airtable_config.json',
+                 envvar='AIRTABLE_CONFIG',
+                 )
+#print(dbauth)
+	
