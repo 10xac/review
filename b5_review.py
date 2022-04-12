@@ -8,21 +8,24 @@ import interviewAnalysis
 st. set_page_config(layout="wide", page_title="Review and Interview")
 # @st.cache(suppress_st_warning=True)
 def getReviewerAppli(reviewerId, reviewerGroup, dbName):
-
+    
     query = "SELECT * from applicant_information WHERE batch = \"batch-5\" "
     df = db_functions.db_execute_fetch(query, rdf=True, dbName=dbName)
     print("______________________data for ",len(df))
     df.drop(['time_stamp','firstname','email','city','nationality','date_of_birth','gender','2nd_reviewer_id', '2nd_reviewer_accepted', '3rd_reviewer_id', '3rd_reviewer_accepted'], inplace=True,
             axis=1)
-    print ("reviewwer_id",reviewerId )
-    if reviewerGroup == 2:
-        query = f"SELECT * from applicant_information where 2nd_reviewer_id = {reviewerId} AND batch = \"batch-5\""
+    print("____________",type(reviewerId))
+    print("_______________",int(reviewerGroup))
+    
+    if int(reviewerGroup) == 2:
+        query = f"SELECT * from applicant_information where 2nd_reviewer_id = {int(reviewerId)}"
+        
         df = db_functions.db_execute_fetch(query, rdf=True, dbName=dbName)
         print(df)
         df.drop(['time_stamp','firstname','email','city','nationality','date_of_birth','gender','batch','3rd_reviewer_id', 'accepted', '3rd_reviewer_accepted'], inplace=True, axis=1)
         print(len(df))
-    elif reviewerGroup == 3:
-        query = f"SELECT * from applicant_information where 3rd_reviewer_id = {reviewerId}"
+    elif int(reviewerGroup) == 3:
+        query = f"SELECT * from applicant_information where 3rd_reviewer_id = {int(reviewerId)}"
         df = db_functions.db_execute_fetch(query, rdf=True, dbName=dbName)
         df.drop(['time_stamp','firstname','email','city','nationality','date_of_birth','gender','batch','2nd_reviewer_id', 'accepted', '2nd_reviewer_accepted'], inplace=True, axis=1)
         print(len(df))
@@ -34,12 +37,12 @@ def getNotDoneReviews(reviewerId, reviewerGroup, dbName):
     
     # Comment above and uncomment below during actual review time
     query = "SELECT * from applicant_information where accepted IS NULL"
-    if reviewerGroup == 2:
+    if int(reviewerGroup)== 2:
         query = "SELECT * from applicant_information where 2nd_reviewer_accepted IS NULL and 2nd_reviewer_id =" \
-                f" {reviewerId}"
-    elif reviewerGroup == 3:
+                f" {int(reviewerId)}"
+    elif int(reviewerGroup) == 3:
         query = "SELECT * from applicant_information where 3rd_reviewer_accepted IS NULL and 3rd_reviewer_id =" \
-                f"{reviewerId}"
+                f"{int(reviewerId)}"
 
     df = db_functions.db_execute_fetch(query, rdf=True, dbName=dbName)
 
@@ -144,11 +147,11 @@ def displayQuestionAndAnswer(reviewerId, reviewerGroup, email, dbName):
             query = """UPDATE applicant_information
                     SET accepted = (%s)
                     WHERE applicant_id = (%s)"""
-            if reviewerGroup == 2:
+            if int(reviewerGroup) == 2:
                 query = """UPDATE applicant_information
                     SET 2nd_reviewer_accepted = (%s)
                     WHERE applicant_id = (%s)"""
-            elif reviewerGroup == 3:
+            elif int(reviewerGroup) == 3:
                 query = """UPDATE applicant_information
                     SET 3rd_reviewer_accepted = (%s)
                     WHERE applicant_id = (%s)"""
@@ -159,11 +162,9 @@ def displayQuestionAndAnswer(reviewerId, reviewerGroup, email, dbName):
             cur.close()
 
 
-def verifyEmail(dbName, email=None):
+def verifyEmail(dbName):
     st.title("2022 Applicants Review")
-    
-    if email is None:
-        email = st.text_input("Enter Your 10academy Email below")
+    email = st.text_input("Enter Your 10academy Email below")
 
     if email:
         try:
@@ -175,7 +176,7 @@ def verifyEmail(dbName, email=None):
 
             try:
                 with st.expander("Show Review Form"):
-                    
+                    print(res)
                     displayQuestionAndAnswer(res[0][0], res[0][4], email, dbName)
             except IndexError as e:
                 st.write("You have not been assigned any applicants to review")
@@ -184,3 +185,12 @@ def verifyEmail(dbName, email=None):
         except ClientError as e:
             st.write("You're not a reviewer, Enter a valid email")
             raise e
+
+reviewType = st.sidebar.selectbox("Review Stage", ["Application review", "Interview"])
+
+if reviewType == "Application review":
+    verifyEmail('tenxdb')
+elif reviewType == "Interview":
+    interviewForm.start()
+# elif reviewType == "Interview Analysis":
+#     interviewAnalysis.main()
