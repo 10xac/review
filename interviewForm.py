@@ -5,9 +5,8 @@ import display_review
 import db_functions
 
 def interviewForm(intervieweeEmail: str, interviewerEmail: str, dbName: str) -> str:
-    conn = db_functions.db_connect(dbName)
+    conn= db_functions.db_connect(dbName)
     cur = conn.cursor(prepared=True)
-
     with st.form(key="interview-form"):
         st.title("Interview Form")
 
