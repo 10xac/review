@@ -20,7 +20,7 @@ import os
 from get_applicants import split_dataframe
 
 def get_dbauth():
-    dbauth = get_auth(ssmkey='b4test-mysql',
+    dbauth = get_auth(ssmkey='tenx/db/pjmatch',
                         envvar='',
                         fconfig=f'{cpath}/.env/dbconfig.json')
 

@@ -5,7 +5,29 @@ import db.databaseManagement as db
 import ui.userManagement as userManagement
 import page
 
-form_key = "my_form"
+form_count = 1
+def redirect_to_content():
+    if st.session_state["access"] == "student":
+        
+        # studentPage.main()
+        st.sidebar.header("Student Page")
+        st.sidebar.subheader("Under construction")
+        st.session_state["hasLoggedIn"] = True 
+        
+    elif st.session_state["access"] == "staff":
+        st.success("You are successfully logged in")
+        st.session_state["hasLoggedIn"] = True
+        st.write("Redirecting to review page with user: {st.session_state['email']}")
+        #col1 = st.columns(1)
+        #with col1:
+        page.main(st.session_state['email'])
+        
+    else: #st.session_state["access"] == "superAdmin":
+        st.success("You are successfully logged in")
+        st.session_state["hasLoggedIn"] = True
+        #col1 = st.columns(1)
+        #with col1:                
+        userManagement.main()
         
 def signin():
     """A form validator which is used to get email and password
@@ -16,7 +38,13 @@ def signin():
     Returns:
         -
     """
-    
+
+    form_count = 1
+    form_key = "my_form"
+    while form_key in st.session_state.keys():
+        form_key=f'my_form_{form_count}'
+        form_count += 1                      
+        
     with st.form(key = form_key):
         st.header("Welcome to 10Academy Application Review Engine")
         st.write("")
@@ -43,6 +71,7 @@ def signin():
             user = db.login_user(email_text_input,
                                  hash.check_hashes(password_text_input,
                                                    hash.make_hashes(password_text_input)))
+
             if user:
                 st.session_state["email"] = email_text_input
                 if user[0][2] == "staff":
@@ -52,35 +81,12 @@ def signin():
                     st.session_state["login"] = "success"
                     st.session_state["access"] = "superAdmin"
             else:
-                st.sidebar.error("Invalid Credentials")
-                st.sidebar.error("No User")
-         
-def landingScreen():
-    """Main screen of the site
-    Args:
-        -
+                st.error("Invalid Credentials")
+                st.error("No User")
 
-    Returns:
-        -
-    """
-    #image = Image.open('data/images/logo.png')
-    #st.image(image, use_column_width=True)
-    st.title("")
-    st.header("Welcome to 10Academy Application Review Engine")
+                
 
-
-def changeselectorStatus(status, value, *arg):
-    """change the status of selector to selected\n should be updated
-    
-    Args:
-        status and value
-        
-    Returns:
-        -
-    """
-    st.session_state['selector'] = "selected"
-
-def sidebarselection(selector):
+def pageselection(selector):
     """display sidebar according to selector value\n selector is to check user has pressed login or not
 
     Args:
@@ -89,33 +95,11 @@ def sidebarselection(selector):
     Returns:
         -
     """
+    col1, col2, col3 = st.columns(3)    
 
-
-    # if(st.session_state["selector"] == "notselected"):
-    #     m = st.markdown("""
-    #     <style>
-    #     div.stButton > button:first-child {
-    #         background-color: rgb(255, 77, 77);
-    #         color:#ffffff;
-    #         font-size:30px;
-    #         width:50%;
-    #     }
-    #     div.stButton > button:hover {
-    #         background-color: #ffffff;
-    #         color:rgb(255, 77, 77);
-    #         font-size:30px;
-    #         }
-    #     </style>""", unsafe_allow_html=True)
-    #     st.button("Login", 
-    #           key = 'signin', 
-    #           on_click = changeselectorStatus(
-    #               st.session_state['selector'],"selected")
-    #     )
-    col1, col2, col3 = st.columns(3)
-    with col2:    
-        #if(st.session_state["selector"] == "notselected"):
-        if form_key not in st.session_state.keys():        
-            st.session_state['selector'] = "selected"            
+    if(st.session_state["selector"] == "notselected"):
+        st.session_state['selector'] = "selected"
+        with col2:    
             signin()
         
         
@@ -129,36 +113,21 @@ def session_start():
         -
     """ 
     db.create_usertable()
-    #db.add_userdata('yabebal@10academy.org','amestkilo','superAdmin')
+    db.add_userdata('yabebal@10academy.org',hash.make_hashes('amestkilo'),'superAdmin')
+    db.add_userdata('yabebal@gmail.com',hash.make_hashes('amestkilo'),'staff')    
+
+    st.session_state["login"] = "unsuccess"
+    st.session_state["hasLoggedIn"] = False
+    st.session_state["selector"] = "notselected"
     
     if "login" not in st.session_state or st.session_state["login"] == "unsuccess":
-        print("lp.login.status=unsuccess")
-        
-        st.session_state["login"] = "unsuccess"
-        
-        if "selector" not in st.session_state:
-            st.session_state["selector"] = "notselected"
-            
+       
         #landingScreen()
-        sidebarselection(st.session_state["selector"])
-        st.session_state["hasLoggedIn"] = False
-        
-    elif st.session_state["login"] == "success":
-        
-        if st.session_state["access"] == "student":
-            # studentPage.main()
-            st.sidebar.header("Student Page")
-            st.sidebar.subheader("Under construction")
-            st.session_state["hasLoggedIn"] = True 
+        pageselection(st.session_state["selector"])
 
-        elif st.session_state["access"] == "staff":
-            st.success("You are successfully logged in")
-            st.session_state["hasLoggedIn"] = True
-            page.main()
-            
-        elif st.session_state["access"] == "superAdmin":
-            st.success("You are successfully logged in")
-            st.session_state["hasLoggedIn"] = True
-            userManagement.main()
 
+    if "login" in st.session_state and st.session_state["login"] == "success":
+                
+        redirect_to_content()
+        
 session_start()

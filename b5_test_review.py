@@ -12,6 +12,7 @@ def getReviewerAppli(reviewerId, reviewerGroup, dbName):
     query = "SELECT * from applicant_information WHERE batch = \"batch-5\" "
     df = db_functions.db_execute_fetch(query, rdf=True, dbName=dbName)
     print("______________________",len(df))
+    
     df.drop(['time_stamp','firstname','email','city','nationality','date_of_birth','gender','2nd_reviewer_id', '2nd_reviewer_accepted', '3rd_reviewer_id', '3rd_reviewer_accepted'], inplace=True,
             axis=1)
    
@@ -167,6 +168,7 @@ def verifyEmail(dbName, email=None):
 
     if email:
         try:
+            db_functions.writeToReview(dbName)
             query = f"SELECT * fROM reviewer WHERE reviewer_email = '{email}'"
             res = db_functions.db_execute_fetch(query, rdf=False, dbName=dbName)
        
@@ -184,3 +186,12 @@ def verifyEmail(dbName, email=None):
         except ClientError as e:
             st.write("You're not a reviewer, Enter a valid email")
             raise e
+
+if __name__ == "__main__":
+    st.sidebar.title("10 Academy")
+    app_mode = st.sidebar.selectbox("Select Review Stage Page", ["Application review", "Interview"])
+    
+    if app_mode == "Application review":
+        verifyEmail('reviewTest') 
+    elif app_mode == "Interview":
+        interviewForm.start()        

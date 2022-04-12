@@ -19,7 +19,7 @@ email = \"\"\n\
 RUN bash -c 'mv ./config.toml /root/.streamlit/config.toml'
 RUN python3 gencred.py
 
-ENTRYPOINT [ "streamlit", "run", "page.py", \
+ENTRYPOINT [ "streamlit", "run", "b5_test_review.py", \
     "--server.port", "80", \
     "--server.enableCORS", "true", \
     "--browser.serverAddress", "0.0.0.0", \

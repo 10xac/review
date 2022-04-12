@@ -13,8 +13,8 @@ import utils.extra as exa
 import utils.s3_utils as s3data
 
 #
-import landingPage as lp
-import b5_test_review as b5
+#import landingPage as lp
+from .b5_test_review import *
 
 #
 # configure landing page
@@ -143,26 +143,39 @@ def main(email):
     app_mode = st.sidebar.selectbox("Select Review Stage Page", ["Application review", "Interview"])
     
     if app_mode == "Application review":
-        b5.verifyEmail('tenxdb')
+        verifyEmail('tenxdb', email=email) 
     elif app_mode == "Interview":
-        b5.interviewForm.start()
+        interviewForm.start()
     # elif app_mode == "Interview Analysis":
     #     b5.interviewAnalysis.main()
         
 
 if __name__ == "__main__":
-
-    if "hasLoggedIn" in st.session_state:
-        if st.session_state["hasLoggedIn"]:
-            print('hasLoggedIn key got set. Checking access condition ..')
-            if "access" in st.session_state and st.session_state["access"] == "staff":
-                print('Calling main strealit app .. ')
-                main(st.session_state['email'])
-            else:
-                st.warning("You are not logged in as a staff member")
-        else:
-            print('calling lp.main()')
-            lp.session_start()
-    else:
-        print('calling lp.main()')
-        lp.session_start()
+    main(email=None)
+    # if "hasLoggedIn" in st.session_state:
+    #     if st.session_state["hasLoggedIn"]:
+    #         print('hasLoggedIn key got set. Checking access condition ..')
+    #         #if "access" in st.session_state and st.session_state["access"] == "staff":
+    #         print('Calling main strealit app .. ')
+    #         main(st.session_state['email'])
+    #         #else:
+    #         #    st.warning("You are not logged in as a staff member")
+    #     else:
+    #         print('calling lp.main()')
+    #         error = 0
+    #         while error<3:
+    #             try:
+    #                 lp.session_start()
+    #                 error = 20
+    #             except:
+    #                 error += 1
+    # else:
+    #     print('calling lp.main()')
+    #     error = 0
+    #     while error<3:
+    #         try:
+    #             lp.session_start()
+    #             error = 20
+    #         except:
+    #             error += 1
+        

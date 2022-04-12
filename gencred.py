@@ -183,7 +183,7 @@ try:
     print('**Getting config files from ssm if they it is not already in .env folder ..')
 
     
-    dbauth = get_auth(ssmkey='b4test-mysql',
+    dbauth = get_auth(ssmkey='tenx/db/pjmatch',
                       envvar='RDS_CONFIG',
                       fconfig=f'{path}/.env/dbconfig.json')
     print(f'==tenx/db/pjmatch config saved: {path}/.env/dbconfig.json')
