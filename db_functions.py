@@ -21,7 +21,7 @@ from get_applicants import split_dataframe
 
 def get_dbauth():
     dbauth = get_auth(ssmkey='tenx/db/pjmatch',
-                        envvar='',
+                        envvar='RDS_CONFIG',
                         fconfig=f'{cpath}/.env/dbconfig.json')
 
 
@@ -162,6 +162,13 @@ def db_execute_fetch(*args, many=False, tablename='', rdf=True, **kwargs):
     else:
         return res
 
+
+def retrive_reviewer(dbName):
+    _ = db_connect(dbName)
+    cur = _.cursor ()
+    cur.execute(f"SELECT * from reviewer")
+    res = cur.fetchall()
+    return res
 
 def getReviewers(reviewerGroup, dbName):
     _ = db_connect(dbName)
@@ -316,10 +323,11 @@ if __name__ == "__main__":
     # query = "describe applicant_information"
     
     # # batch ="batch-5"
-    reviewerId = 4
-    query = f"SELECT * from applicant_information where 3rd_reviewer_id = {reviewerId}" 
+    get_dbauth()
+    # reviewerId = 4
+    # query = f"SELECT * from applicant_information where 3rd_reviewer_id = {reviewerId}" 
     
-    # update_appli_with_reviewer()
-    df = db_execute_fetch(query, rdf=True, dbName='tenxdb')
-    print(df)
+    # # update_appli_with_reviewer()
+    # df = db_execute_fetch(query, rdf=True, dbName='tenxdb')
+    # print(df)
    
