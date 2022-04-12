@@ -165,7 +165,9 @@ if __name__ == "__main__":
     
     path = os.path.dirname(os.path.realpath(__file__))
     path = os.path.dirname(path)
+
     dbauth = get_auth(ssmkey='tenx/db/pjmatch',
+
                       envvar='RDS_CONFIG',
                       fconfig=f'{path}/.env/dbconfig.json')
     print('**Getting config files from ssm if they it is not already in .env folder ..')
