@@ -1,10 +1,12 @@
 import streamlit as st
 import sessionState
 import createDBandTables
-import displayInterviewee
+import display_review
+import db_functions
 
 def interviewForm(intervieweeEmail: str, interviewerEmail: str, dbName: str) -> str:
-    conn, cur = createDBandTables.DBConnect(dbName)
+    conn = db_functions.db_connect(dbName)
+    cur = conn.cursor(prepared=True)
 
     with st.form(key="interview-form"):
         st.title("Interview Form")
@@ -139,7 +141,7 @@ def start():
     traineeMailTitle.markdown("<p style='font-size:22px; margin-bottom:-50px; border-radius:10px;'>Enter trainee's"
                               " email below</p>", unsafe_allow_html=True)
 
-    df = displayInterviewee.loadTrainee()
+    df = display_review.loadTrainee()
     
     for col in df.columns:
         df[col + "_rank"] = df[col].rank(method="max", na_option='bottom', ascending=False, numeric_only=True)
@@ -152,14 +154,14 @@ def start():
     if intervieweeEmail:
         df = df.loc[df["email"] == intervieweeEmail[0]]
         with traineeInfo.expander("Show Trainee Info"):
-            displayInterviewee.displayTraineeInfo(df)
+            display_review.displayTraineeInfo(df)
 
     interviewerMailTitle.markdown("<p style='font-size:22px; margin-bottom:-50px; border-radius:10px;'>Enter your "
                                   "10academy email below</p>", unsafe_allow_html=True)
     interviewerEmail = interviewerMail.text_input("", key="int" + str(kval))
 
     if interviewerEmail:
-        df = displayInterviewee.loadInterviwer()
+        df = display_review.loadInterviwer()
         df = df.loc[df["reviewer_email"] == interviewerEmail]
         if len(df) == 0:
             interviewQuestions.markdown("<p style='color:#F63366;font-size:22px;'>This is not a registered 10academy"
