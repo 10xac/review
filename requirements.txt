@@ -8,7 +8,7 @@ streamlit-tags
 gspread==3.7.0
 
 protobuf==3.17.3
-plotly
+
 requests
 sqlalchemy
 mysql-connector-python==8.0.28
