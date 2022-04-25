@@ -24,18 +24,29 @@ class StrapiMethods:
         
         print("Writing gspread config to /.env/Strapi_token.json")
 
-    def fetch_data(self,table):
+    def fetch_data(self,table, token):
        
         r = requests.get(table,headers = {
 
-                        "Authorization": f"Bearer {self.token['token']}", 
+                        "Authorization": f"Bearer {token}", 
 
                         "Content-Type": "application/json"})
         return r.json()
     
                 
+    def update(self,table, id, params, token):
         
-    def insert_data (self,data,table):
+        r = requests.put(table+ str(id),
+        data=json.dumps({
+           "data":params
+        }),
+        headers={
+            "Authorization": f"Bearer {token}", 
+            'Content-Type': 'application/json'
+        })
+        
+        
+    def insert_data (self,data,table,token ):
        
         try:
             r = requests.post(
@@ -46,7 +57,7 @@ class StrapiMethods:
 
                 headers = {
 
-                "Authorization": f"Bearer {self.token['token']}", 
+                "Authorization": f"Bearer {token}", 
 
                 "Content-Type": "application/json"}
 
@@ -58,8 +69,7 @@ class StrapiMethods:
 
         
     def prepare_applicants  (self,table):
-        
-       
+
         df = process_dataframe()
         df = df.replace('', 'null')
         
