@@ -47,8 +47,8 @@ def process_dataframe ():
     df = df.replace(r'^\s+$', np.nan, regex=True)
         # print (db_col)
         
-      
-    print(df.columns)
+    # recent_df = df[1225:]
+    # print(recent_df)
     # new_df = pd.DataFrame(columns=df.columns)
     # new_df.loc[len(new_df)] = [str("test")] * 41
     return df
@@ -78,11 +78,11 @@ def loadInterviwer():
     query = "Describe applicant_information"
     df = db_execute_fetch(query, rdf=True, dbName=dbName)
     print(df)
-    
-    
-  
-                    
+               
     return df
+
+
+
 
 if __name__ == "__main__":
 

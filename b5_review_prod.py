@@ -1,57 +1,62 @@
 from botocore.exceptions import ClientError
 import streamlit as st
-import db_functions
+import postgres_functions
 import sessionState
-import interviewForm
+import strapi_interview_form
 import interviewAnalysis
 
 st. set_page_config(layout="wide", page_title="Review and Interview")
 # @st.cache(suppress_st_warning=True)
 def getReviewerAppli(reviewerId, reviewerGroup, dbName):
 
-    query = "SELECT * from applicant_information WHERE batch = \"batch-5\" "
-    df = db_functions.db_execute_fetch(query, rdf=True, dbName=dbName)
+    query = f"SELECT * from applicant_informations WHERE batch = \'batch-5\' "
+    df = postgres_functions.db_execute_fetch(query, rdf=True, dbName=dbName)
     print("______________________data for ",len(df))
-    df.drop(['time_stamp','firstname','email','city','nationality','date_of_birth','gender','2nd_reviewer_id', '2nd_reviewer_accepted', '3rd_reviewer_id', '3rd_reviewer_accepted'], inplace=True,
+    df.drop(['time_stamp','firstname','email','city','nationality','date_of_birth','gender','second_reviewer_id', 'second_reviewer_accepted', 'third_reviewer_id', 'third_reviewer_accepted'], inplace=True,
             axis=1)
     print ("reviewwer_id",reviewerId )
     if reviewerGroup == 2:
-        query = f"SELECT * from applicant_information where 2nd_reviewer_id = {reviewerId} AND batch = \"batch-5\""
-        df = db_functions.db_execute_fetch(query, rdf=True, dbName=dbName)
-        print(df)
-        df.drop(['time_stamp','firstname','email','city','nationality','date_of_birth','gender','batch','3rd_reviewer_id', 'accepted', '3rd_reviewer_accepted'], inplace=True, axis=1)
-        print(len(df))
+        query = f"SELECT * from applicant_informations where second_reviewer_id = {reviewerId} AND batch = \'batch-5\'"
+        df = postgres_functions.db_execute_fetch(query, rdf=True, dbName=dbName)
+        # print(df)
+        df.drop(['time_stamp','firstname','email','city','nationality','date_of_birth','gender','batch','third_reviewer_id', 'accepted',
+                 'referee_name','name_of_instituition',
+                 'created_at', 'updated_at', 'published_at', 'created_by_id',
+                 'updated_by_id','third_reviewer_accepted'], inplace=True, axis=1)
+        # print(len(df))
     elif reviewerGroup == 3:
-        query = f"SELECT * from applicant_information where 3rd_reviewer_id = {reviewerId}"
-        df = db_functions.db_execute_fetch(query, rdf=True, dbName=dbName)
-        df.drop(['time_stamp','firstname','email','city','nationality','date_of_birth','gender','batch','2nd_reviewer_id', 'accepted', '2nd_reviewer_accepted'], inplace=True, axis=1)
-        print(len(df))
+        query = f"SELECT * from applicant_informations where third_reviewer_id = {reviewerId} AND batch = \'batch-5\'"
+        df = postgres_functions.db_execute_fetch(query, rdf=True, dbName=dbName)
+        df.drop(['time_stamp','firstname','email','city','nationality','date_of_birth','gender','batch','second_reviewer_id', 'accepted', 
+                 'referee_name','name_of_instituition',
+                 'created_at', 'updated_at', 'published_at', 'created_by_id',
+                 'updated_by_id','second_reviewer_accepted'], inplace=True, axis=1)
+        # print(len(df))
     return df
 
 def getNotDoneReviews(reviewerId, reviewerGroup, dbName):
 
-    # query = "SELECT * from applicant_information"
+    # query = "SELECT * from applicant_informations"
     
     # Comment above and uncomment below during actual review time
-    query = "SELECT * from applicant_information where accepted IS NULL"
+    query = "SELECT * from applicant_informations where accepted IS NULL"
     if reviewerGroup == 2:
-        query = "SELECT * from applicant_information where 2nd_reviewer_accepted IS NULL and 2nd_reviewer_id =" \
-                f" {reviewerId}"
+        query = f"SELECT * from applicant_informations where second_reviewer_accepted IS NULL AND second_reviewer_id = {reviewerId} AND batch = \'batch-5\'"
     elif reviewerGroup == 3:
-        query = "SELECT * from applicant_information where 3rd_reviewer_accepted IS NULL and 3rd_reviewer_id =" \
-                f"{reviewerId}"
+        query = f"SELECT * from applicant_informations where third_reviewer_accepted IS NULL AND third_reviewer_id = {reviewerId} AND batch = \'batch-5\'"
 
-    df = db_functions.db_execute_fetch(query, rdf=True, dbName=dbName)
-
+    df = postgres_functions.db_execute_fetch(query, rdf=True, dbName=dbName)
+    
     return len(df)
 
 def displayQuestionAndAnswer(reviewerId, reviewerGroup, email, dbName):
 
-    conn = db_functions.db_connect(dbName)
+    conn = postgres_functions.db_connect(dbName)
     cur = conn.cursor()
     applicant_info = getReviewerAppli(reviewerId, reviewerGroup, dbName)
-    #
+    
     notDone = getNotDoneReviews(reviewerId, reviewerGroup, dbName)
+   
     remaining = len(applicant_info) - notDone
     percentage = remaining / len(applicant_info) * 100
     N = 1
@@ -85,17 +90,17 @@ def displayQuestionAndAnswer(reviewerId, reviewerGroup, email, dbName):
     
     row = applicant_info.iloc[start_idx:end_idx]
     
-    applicant_index = row["applicant_id"].values[0]
+    applicant_index = row["id"].values[0]
     print("_____________",applicant_index)
    
     with st.form(key='review-form'):
         st.write(f"You have reviewed {remaining} / {len(applicant_info)} so far; {percentage:.2f}% done ")
          
         for question in row.columns:
-            if question == "3rd_reviewer_id" or question == "2nd_reviewer_id":
+            if question == "third_reviewer_id" or question == "second_reviewer_id":
                 continue
 
-            if question == "2nd_reviewer_accepted" or question == "3rd_reviewer_accepted":
+            if question == "second_reviewer_accepted" or question == "third_reviewer_accepted":
                 st.write("## Accepted")
             else:
                 st.write(f"## {question.capitalize()}")
@@ -105,7 +110,7 @@ def displayQuestionAndAnswer(reviewerId, reviewerGroup, email, dbName):
            
 
             if answer == 'None' or answer == '':
-                if question == 'accepted' or question == "2nd_reviewer_accepted" or question == "3rd_reviewer_accepted":
+                if question == 'accepted' or question == "second_reviewer_accepted" or question == "third_reviewer_accepted":
                     appQue = "Is this applicant accepted to week 0?"
                     st.markdown(f"<p style='padding:10px;color:#ed1f33;font-size:20px;border-radius:10px;'>{appQue}"
                                 "</p>", unsafe_allow_html=True)
@@ -117,7 +122,7 @@ def displayQuestionAndAnswer(reviewerId, reviewerGroup, email, dbName):
                             f"border-radius:10px;'>{noAns}</p>", unsafe_allow_html=True)
 
             else:
-                if question == 'accepted' or question == "2nd_reviewer_accepted" or question == "3rd_reviewer_accepted":
+                if question == 'accepted' or question == "second_reviewer_accepted" or question == "third_reviewer_accepted":
                     st.markdown("<p style='padding:10px; background-color:#F0F2F6;color:black;font-size:18px;"
                                 f"border-radius:10px;'>{answer}</p>", unsafe_allow_html=True)
                     chanQue = "Change this applicant's status to"
@@ -141,17 +146,17 @@ def displayQuestionAndAnswer(reviewerId, reviewerGroup, email, dbName):
         if submitButton:
             st.write("This Applicant has been reviewed")
             # print (acceptedValue)
-            query = """UPDATE applicant_information
+            query = """UPDATE applicant_informations
                     SET accepted = (%s)
-                    WHERE applicant_id = (%s)"""
+                    WHERE id = (%s)"""
             if reviewerGroup == 2:
-                query = """UPDATE applicant_information
-                    SET 2nd_reviewer_accepted = (%s)
-                    WHERE applicant_id = (%s)"""
+                query = """UPDATE applicant_informations
+                    SET second_reviewer_accepted = (%s)
+                    WHERE id = (%s)"""
             elif reviewerGroup == 3:
-                query = """UPDATE applicant_information
-                    SET 3rd_reviewer_accepted = (%s)
-                    WHERE applicant_id = (%s)"""
+                query = """UPDATE applicant_informations
+                    SET third_reviewer_accepted = (%s)
+                    WHERE id = (%s)"""
 
             cur.execute(query, (acceptedValue, int(applicant_index)))
 
@@ -167,16 +172,16 @@ def verifyEmail(dbName, email=None):
 
     if email:
         try:
-            query = f"SELECT * fROM reviewer WHERE reviewer_email = '{email}'"
-            res = db_functions.db_execute_fetch(query, rdf=False, dbName=dbName)
+            query = f"SELECT * fROM reviewers WHERE reviewer_email = '{email}'"
+            res = postgres_functions.db_execute_fetch(query, rdf=False, dbName=dbName)
             
             if len(res) == 0:
                 st.write("You're not a reviewer, Enter a valid email")
 
             try:
                 with st.expander("Show Review Form"):
-                    
-                    displayQuestionAndAnswer(res[0][0], res[0][4], email, dbName)
+                    print(res)
+                    displayQuestionAndAnswer(res[0][0], res[0][3], email, dbName)
             except IndexError as e:
                 st.write("You have not been assigned any applicants to review")
                 raise e
@@ -184,3 +189,11 @@ def verifyEmail(dbName, email=None):
         except ClientError as e:
             st.write("You're not a reviewer, Enter a valid email")
             raise e
+
+
+reviewType = st.sidebar.selectbox("Review Stage", ["Application review", "Interview"])
+
+if reviewType == "Application review":
+    verifyEmail('strapidev')
+# elif reviewType == "Interview":
+#     strapi_interview_form.start()
