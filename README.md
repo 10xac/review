@@ -16,7 +16,7 @@
 
 Assuming that you are working in Project directory
 
-`cd ~/Project`
+
 `git clone https://github.com/10xac/review.git`
 `git checkout main`
 
