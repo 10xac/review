@@ -25,6 +25,52 @@ class InsertAllUsers:
         self.ssmkey = ssmkey
         self.sm = StrapiMethods(self.root, self.ssmkey)
         self.sg = StrapiGraphql(self.root, self.ssmkey)
+        self.role = "trainee" # applicant, trainee, staff
+        
+
+    
+    def get_staff_data(self):
+        """
+        Function to read application from google sheet. 
+        Args: 
+            sid_application: sheet id for the staff information 
+        Returns:
+            df: dataframe
+        """
+
+        gd = gsheet(sheetid="1mG8uNDxaDfNq-iRi-_-mgsz5rArkrMPAXtV8IR53xXM",
+                    fauth='admin-10ac-service.json')
+        sname = f'Form responses 1'
+
+        try:
+            df = gd.get_sheet_df(sname)
+
+            # print(df.head())
+            print(f'------------{sname} df.shape={df.shape}----')
+
+        except Exception as e:
+            print(f'ERROR: Could not obtain sheet for {sname}', e)
+
+        return df
+
+    def insert_user(self, df):
+        all_ids= []
+        allemail =[]
+        for indx, items in df.iterrows():
+        
+                email = items['email']
+                uname = items['name']
+                # all_user_id = items['all_users']
+                print(email, uname,)
+                
+                query = """mutation createUser($username:String!,$email:String!) { register(input: { username: $username, email: $email, password: $email } ) { user { id username email }  } }"""
+                variables = {"username": uname, "email":email}
+                result_json = self.sg.Select_from_table(query=query, variables= variables)
+                print( result_json)
+                all_ids.append(result_json['data']['register']['user']['id'])
+                allemail.append(result_json['data']['register']['user']['email'])
+        
+        return all_ids, allemail
 
     def get_applicant_data(self):
         """
@@ -51,8 +97,15 @@ class InsertAllUsers:
         return df
 
     def change_name_fullname(self, row):
-        fname = row['firstname'].strip()
-        lname = row['familyname'].strip()
+        """
+        Function to change names to full name . 
+        Args: 
+            row: row containes first name and last name
+        Returns:
+            fname: returns full name
+        """
+        fname = row['firstname'].strip().title()
+        lname = row['familyname'].strip().title()
         lenstring = fname.split(" ")
         lname_words = lname.split(" ")
         if len(lenstring) < 2:
@@ -62,6 +115,14 @@ class InsertAllUsers:
             return fname
 
     def process_dataframe(self):
+
+        """
+        Function to preprocess trainee information  
+       
+        Returns:
+            df: dataframe
+        """
+
         app_df = self.get_applicant_data()
         df = app_df.T
         df['Timestamp'] = df['Timestamp'].apply(
@@ -90,37 +151,28 @@ class InsertAllUsers:
         user_df['Batch'] = int(df['batch'][1].split("-")[1])
         return user_df
 
-    def insert_all_users(self, table):
+    # def insert_all_users(self, table):
 
-        df = self.prepare_applicants()
-        result = df.to_json(orient="records", date_format='iso')
-        # sm = StrapiMethods(root="dev-cms", ssmkey="dev/strapi/token" )
+    #     df = self.prepare_applicants()
+    #     result = df.to_json(orient="records", date_format='iso')
+    #     # sm = StrapiMethods(root="dev-cms", ssmkey="dev/strapi/token" )
 
-        for data in json.loads(result):
-            # print(data)
-            r = self.sm.insert_data(data, table, self.sm.token['token'])
-            print(r)
-            # break
-        print("All records are inserted")
-
-    def insert_staff_all_users(self, table):
-        staff_df = self.get_applicant_data()
-        df = staff_df.T
-        df.rename(columns={'Name': 'name', 'Role': 'role',
-                  "Email": "email"}, inplace=True)
-
-        result = df.to_json(orient="records", date_format='iso')
-
-        for data in json.loads(result):
-            print(data)
-            # r = sm.insert_data(data,table, sm.token['token'])
-            # print(r)
-            # break
-        print("All records are inserted")
-
-    def select_applicants_from_allusers(self):
-        query = """ query getAllUser{
-                allUsers(pagination:{start:0, limit:2000} filters:{Batch:{eq:6}, role:{eq:"applicant"}}){
+    #     for data in json.loads(result):
+    #         # print(data)
+    #         r = self.sm.insert_data(data, table, self.sm.token['token'])
+    #         print(r)
+    #         # break
+    #     print("All records are inserted")
+    
+    def select_users_from_allusers(self):
+        """
+        Function to preprocess trainee information  
+       
+        Returns:
+            df: dataframe
+        """
+        query = """ query getAllUser($batch:Int,$role:String){
+                allUsers(pagination:{start:0, limit:2000} filters:{Batch:{eq:$batch}, role:{eq:$role}}){
                     meta{
                     pagination{
                         total
@@ -137,14 +189,87 @@ class InsertAllUsers:
                 }
                 }
             """
-
-        result_json = self.sg.Select_from_table(query=query, variables=None)
+        result_json = self.sg.Select_from_table(query=query, variables={"batch":self.batch, "role": self.role})
 
         df = pd.json_normalize(result_json['data']['allUsers']['data'])
-        df.rename(columns={"attributes.name": "name", "attributes.email": "email",
-                  "attributes.Batch": "Batch"}, inplace=True)
+        df.rename(columns={"attributes.name": "name", "attributes.email": "Email",
+                    "attributes.Batch": "batches", 'id':'all_user'}, inplace=True)
+       
+        df = df.drop(columns=['name'])
         return df
 
+    def insert_staff_all_users(self):
+        """
+        Function to insert staff to user and all user table. 
+        
+        Returns:
+            df: dataframe
+        """
+
+        staff_df = self.get_staff_data()
+        df = staff_df.T
+        df.rename(columns={'Name': 'name', 'Role': 'role',
+                  "Email": "email"}, inplace=True)
+        all_ids, allemail = self.insert_user(df=df)
+        df['user']=all_ids
+        df['uemail']=allemail
+        table =f"https://{self.root}.10academy.org/api/all-users"
+        for i,row in df.iterrows():
+            row_dict = {
+                    "name":row['name'],
+                    "email":row['email'],
+                    "role":row['role'],
+                    "Batch":row['Batch'],
+                    "user":row['user'],
+            }
+            r = self.sm.insert_data(row_dict, table, self.sm.token['token'])
+            print(r)
+      
+        print("All records are inserted")
+
+    def insert_reviewers(self):
+        """
+        Function to insert users to reviewers table. 
+        
+        Returns:
+           
+        """
+
+        df =self.select_users_from_allusers()
+        df.rename(columns={'id':'all_user','Batch':'batches','email':'Email'}, inplace=True)
+        table = f"https://{self.root}.10academy.org/api/reviewers"
+        result = df.to_json(orient="records", date_format='iso')
+        
+
+        for data in json.loads(result):
+            print(data)
+            r = self.sm.insert_data(data, table, self.sm.token['token'])
+            print(r)
+            # break
+        print("All records are inserted")
+
+
+    def insert_group(self):
+        """
+        Function to insert users to group table. 
+        
+        Returns:
+           
+        """
+
+        adf =self.select_users_from_allusers()
+   
+        adf.rename(columns={'all_user':'all_users','name':'Name'}, inplace=True)
+        ids = adf['all_users'].to_list()
+        table = f"https://{self.root}.10academy.org/api/groups"
+      
+        batch_name = "B"+str(self.batch)
+        data={'Name':batch_name,'all_users':ids}
+
+        r = self.sm.insert_data(data, table, self.sm.token['token'])
+        print(r)
+    
+# for Trainees 
     def get_quiz_result(self, sid_quiz):
 
         gd = gsheet(sheetid=sid_quiz, fauth='admin-10ac-service.json')
@@ -162,6 +287,7 @@ class InsertAllUsers:
         return df
 
     def process_quiz(self):
+
         score_df = self.get_quiz_result(
             "1EWnob10WYkHi0Sn87u5EqiVz7_JWCYzW92bIj_hn8EA")
         transform = score_df.T
@@ -256,19 +382,64 @@ class InsertAllUsers:
     
     
     def insert_1hr_score(self, row):
-            grade_table = f"https://{self.root}.10academy.org/api/grades"
-            tosend_grade = {
-                "label":"B6 1hr test",
-                "score":round(float(row['Score'])),
-                
-                "all_user":int(row['id'])
-                }
+        """
+            Function to insert 1hr test result 
+      
+         """
+        grade_table = f"https://{self.root}.10academy.org/api/grades"
+        tosend_grade = {
+            "label":"B6 1hr test",
+            "score":round(float(row['Score'])),
             
-            r = self.sm.insert_data(tosend_grade,grade_table, self.sm.token['token'])
-            grade_id = r['data']['id']
-            print(r)
-            return grade_id
+            "all_user":int(row['id'])
+            }
+        
+        r = self.sm.insert_data(tosend_grade,grade_table, self.sm.token['token'])
+        grade_id = r['data']['id']
+        print(r)
+        return grade_id
+
+
+
+    def get_reviewers (self):
+            """
+            Function to get current batch reviewers from strapi graphql
+            Args:
+                Self.batch (Int): Number that represent current batch 
+
+            Returns:
+                reviewers (list): List of reviewers for current batch
+            """
+            query = """ query getReviewer($batch: Int) {
+                    reviewers(
+                        pagination: { start: 0, limit: 100 }
+                        filters: { batches: { Batch: { eq: $batch } } }
+                    ) {
+                        data {
+                        id
+                        attributes {
+                            Email
+                        }
+                        }
+                    }
+                    }
+            """
+            reviewerJson = self.sg.Select_from_table(query=query, variables={"batch": self.batch})
+            
+            reviewerdf =  pd.json_normalize(reviewerJson['data']['reviewers']['data'])
+            reviewers = reviewerdf['id'].to_list()
+            return reviewers
+
+
     def process_with_question_type(self):
+        """
+            Function to used to insert with different chunks and  with question, one hour score 
+            Args:
+                Self.batch (Int): Number that represent current batch 
+
+            Returns:
+                reviewers (list): List of reviewers for current batch
+        """
         df_selected = self.filter_application()
         length_cols = df_selected.columns
         # length_cols.remove('Score')
@@ -297,7 +468,7 @@ class InsertAllUsers:
             reviewgroup = applicant_list[i]
         
             if i == 0:
-                reviewers = [8,11,10,16,15,30]# [8,10,16,11,30,15 ]  # dev tenx 
+                reviewers = self.get_reviewers()# [8,10,16,11,30,15 ]  # dev tenx 
                 for index, row in reviewgroup.iterrows():
                     grade_id = self.insert_1hr_score(row)
                     prefilled_res = []
@@ -363,7 +534,7 @@ class InsertAllUsers:
                     r = self.sm.insert_data(to_send, table, self.sm.token['token'])
                     print(r)
             elif i==1:
-                reviewers = [8,11,10,16,24,32]#[8,10,16,11,24,28 ] # dev tenx 
+                reviewers = self.get_reviewers()#[8,10,16,11,24,28 ] # dev tenx 
                 for index, row in reviewgroup.iterrows():
                     grade_id = self.insert_1hr_score(row)
                     prefilled_res = []
@@ -428,7 +599,7 @@ class InsertAllUsers:
                     r = self.sm.insert_data(to_send, table, self.sm.token['token'])
                     print(r)
             elif i==2:
-                reviewers =  [8,11,10,16,26,31] #[8,10,16,11,26,29 ]  # dev tenx 
+                reviewers =  self.get_reviewers() #[8,10,16,11,26,29 ]  # dev tenx 
                 for index, row in reviewgroup.iterrows():
                     grade_id = self.insert_1hr_score(row)
                     prefilled_res = []
@@ -493,7 +664,7 @@ class InsertAllUsers:
                     r = self.sm.insert_data(to_send, table, self.sm.token['token'])
                     print(r)
             elif i==3:
-                reviewers =  [8,11,10,16,21,29] # [8,10,16,11,21,31 ]   # dev tenx 
+                reviewers =  self.get_reviewers() # [8,10,16,11,21,31 ]   # dev tenx 
                 for index, row in reviewgroup.iterrows():
                     grade_id = self.insert_1hr_score(row)
                     prefilled_res = []
@@ -557,159 +728,6 @@ class InsertAllUsers:
 
                     r = self.sm.insert_data(to_send, table, self.sm.token['token'])
                     print(r)
-                    
-                
-        # return exclude_emails
+  
         return df_selected
     
-    
-    # def assign_reviewer(self):
-    #     query = """
-    #             query getreview{
-    #             reviews(pagination:{start:0, limit:2000} 
-    #             filters:{review_category:{name:{eq:"Batch 6 Admission"}}}  ){
-    #                 meta{
-    #                 pagination{
-    #                     total
-    #                 }
-    #                 }
-    #                 data{
-                    
-    #                 id
-                    
-    #                 }
-    #             }
-    #             }
-    #             """
-                
-                
-         
-            
-           
-           
-    #     result_json = self.sg.Select_from_table(query=query, variables=None)
-
-    #     df = pd.json_normalize(result_json['data']['reviews']['data'])    
-            
-    #     review_list = self.chunck_reviews(df)
-    #     table = "https://cms.10academy.org/api/reviewers"
-    #     for i in review_list:
-    #         reviewId = review_list[i]['id'].to_list()
-    #         [8,11,10,16,15,30]
-    #         [8,11,10,16,24,32]
-    #         [8,11,10,16,26,31]
-    #         [8,11,10,16,21,29]
-    #         if i == 0:
-    #             reviewer_data1 = {
-    #                 "Email":"yididya@10academy.org",
-    #                  "reviews":reviewId,
-    #                 "review_categories":1
-    #             }
-    #             reviewer_data2 = {
-    #                 "Email":"mmusa@10academy.org",
-    #                  "reviews":reviewId,
-    #                 "review_categories":1
-    #             }
-    #             reviewer_data3 = {
-    #                 "Email":"yabebal@10academy.org",
-    #                  "reviews":reviewId,
-    #                 "review_categories":1
-    #             }
-    #             reviewer_data4 = {
-    #                 "Email":"mahlet@10academy.org",
-    #                 "reviews":reviewId,
-    #                 "review_categories":1
-    #             }
-    #         elif i ==1:
-    #             reviewer_data1 = {
-    #                 "Email":"atamrat@10academy.org",
-    #                  "reviews":reviewId,
-    #                 "review_categories":1
-    #             }
-    #             reviewer_data2 = {
-    #                 "Email":"arun@10academy.org",
-    #                  "reviews":reviewId,
-    #                 "review_categories":1
-    #             }
-    #             reviewer_data3 = {
-    #                 "Email":"mahlet@10academy.org",
-    #                  "reviews":reviewId,
-    #                 "review_categories":1
-    #             }
-    #             reviewer_data4 = {
-    #                 "Email":"evariste@10academy.org",
-    #                  "reviews":reviewId,
-    #                 "review_categories":1
-    #             }
-    #         elif i ==2:
-    #             reviewer_data1 = {
-    #                 "Email":"nardos@10academy.org",
-    #                  "reviews":reviewId,
-    #                 "review_categories":1
-    #             }
-    #             reviewer_data2 = {
-    #                 "Email":"abdullahi@10academy.org",
-    #                  "reviews":reviewId,
-    #                 "review_categories":1
-    #             }
-    #             reviewer_data3 = {
-    #                 "Email":"arun@10academy.org",
-    #                  "reviews":reviewId,
-    #                 "review_categories":1
-    #             }
-    #             reviewer_data4 = {
-    #                 "Email":"bereket@10academy.org",
-    #                  "reviews":reviewId,
-    #                 "review_categories":1
-    #             }
-    #         elif i ==3:
-    #             reviewer_data1 = {
-    #                 "Email":"akiiru@10academy.org",
-    #                  "reviews":reviewId,
-    #                 "review_categories":1
-    #             }
-                
-    #             reviewer_data2 = {
-    #                 "Email":"asa@10academy.org",
-    #                  "reviews":reviewId,
-    #                 "review_categories":1
-    #             }
-    #             reviewer_data3 = {
-    #                 "Email":"yabebal@10academy.org",
-    #                  "reviews":reviewId,
-    #                 "review_categories":1
-    #             }
-    #             reviewer_data4 = {
-    #                 "Email":"michael@10academy.org",
-    #                  "reviews":reviewId,
-    #                 "review_categories":1
-    #             }
-                
-    #         # elif i ==4:
-    #         #     reviewer_data1 = {
-    #         #         "Email":"mmaina@10academy.org",
-    #         #          "reviews":reviewId,
-    #         #         "review_categories":1
-    #         #     }
-    #         #     reviewer_data2 = {
-    #         #         "Email":"mconton@10academy.org",
-    #         #         "reviews":reviewId,
-    #         #         "review_categories":1
-    #         #     }
-    #         #     reviewer_data3 = {
-    #         #         "Email":"arun@10academy.org",
-    #         #         "reviews":reviewId,
-    #         #         "review_categories":1
-    #         #     }
-    #         #     reviewer_data4 = {
-    #         #         "Email":"zelalem@10academy.org",
-    #         #         "reviews":reviewId,
-    #         #         "review_categories":1
-    #         #     }
-    #         else:
-    #             break
-    #         # print(reviewer_data1)
-    #         # print(reviewer_data2)
-    #         print(reviewer_data3)
-    #         print(reviewer_data4)
-    #         print("_________________________")
