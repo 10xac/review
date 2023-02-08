@@ -103,6 +103,7 @@ class InsertUserSpecial_challenge:
                     "Batch":row['Batch'],
                     "user":row['user'],
             }
+           
             r = self.sm.insert_data(row_dict, table, self.sm.token['token'])
             print(r)
       
@@ -111,7 +112,15 @@ class InsertUserSpecial_challenge:
 
     def insert_reviewers(self):
         df =self.select_applicants_from_allusers()
+        to_exclude = ['brianodhiambo530@gmail.com','rahelweldegebriel2120@gmail.com','smlnegash@gmail.com',
+                        'alaroabubakarolayemi@gmail.com','s.mwikali.muoki@gmail.com','lotomej12@gmail.com',
+                        'natananshiferaw@gmail.com']
+        
+      
+        df= df[~df['Email'].isin(to_exclude)]
+        print(df.columns)
         df.rename(columns={'id':'all_user','Batch':'batches','email':'Email'}, inplace=True)
+      
         table = f"https://{self.root}.10academy.org/api/reviewers"
         result = df.to_json(orient="records", date_format='iso')
            
@@ -125,8 +134,7 @@ class InsertUserSpecial_challenge:
 
     def insert_group(self):
         adf =self.select_applicants_from_allusers()
-   
-        adf.rename(columns={'all_user':'all_users','name':'Name'}, inplace=True)
+        
         ids = adf['all_users'].to_list()
         table = f"https://{self.root}.10academy.org/api/groups"
       
