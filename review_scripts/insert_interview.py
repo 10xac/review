@@ -4,29 +4,22 @@ import sys
 import datetime
 import numpy as np
 import pandas as pd
-curdir = os.path.dirname(os.path.realpath(__file__))
-print(curdir)
-cpath = os.path.dirname(curdir)
-if not cpath in sys.path:
-    sys.path.append(cpath)
 
 
 from review_scripts.strapi_graphql import StrapiGraphql
 from review_scripts.strapi_methods import StrapiMethods
-from question_mapper import column_mapper
-from review_scripts.gdrive import gsheet
+from utils.question_mapper import column_mapper
+from utils.gdrive import gsheet
 
 
 class InsertInterview:
     """ Class used to insert review that doesn't have prefilled response. 
         It will be used to insert Interview, One to one session etc.
     """ 
-    def __init__(self, root="dev-cms", ssmkey="dev/strapi/token") -> None:
+    def __init__(self, run_stage = "dev-cms") -> None:
         
-        self.root = root
-        self.ssmkey = ssmkey
-        self.sm = StrapiMethods(self.root, self.ssmkey)
-        self.sg = StrapiGraphql(self.root, self.ssmkey)
+        self.sm = StrapiMethods(run_stage= run_stage)
+        self.sg = StrapiGraphql(run_stage= run_stage)
     
     def get_accepted_trainee(self, sg, batch, Status):
         bquery = """

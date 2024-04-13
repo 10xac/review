@@ -5,72 +5,77 @@ import sys
 import datetime
 import numpy as np
 import pandas as pd
-curdir = os.path.dirname(os.path.realpath(__file__))
-print(curdir)
-cpath = os.path.dirname(curdir)
-if not cpath in sys.path:
-    sys.path.append(cpath)
-
+import uuid
 
 from review_scripts.strapi_graphql import StrapiGraphql
 from review_scripts.strapi_methods import StrapiMethods
-from question_mapper import column_mapper
-from review_scripts.gdrive import gsheet
+from utils.question_mapper import column_mapper
+from review_scripts.communication_manager import CommunicationManager
+from utils.gdrive import gsheet
 
 class InsertAllUsers:
-    def __init__(self, root="dev-cms", ssmkey="dev/strapi/token", sid_application="17XDDjWzPXJ-mmkWAFVz5IMpsVfmFyKtvXOJ6YwqS3CM", batch="batch-6") -> None:
+    def __init__(self, run_stage="dev-cms", 
+                 sid_application="17XDDjWzPXJ-mmkWAFVz5IMpsVfmFyKtvXOJ6YwqS3CM", 
+                 batch="batch-6",
+                 sname = 'forBackendUse', role="trainee") -> None:
         self.sid_application = sid_application
         self.batch = batch
-        self.root = root
-        self.ssmkey = ssmkey
-        self.sm = StrapiMethods(self.root, self.ssmkey)
-        self.sg = StrapiGraphql(self.root, self.ssmkey)
-        self.role = "trainee" # applicant, trainee, staff
+        self.cm = CommunicationManager()
+        self.sm = StrapiMethods(run_stage=run_stage)
+        self.sg = StrapiGraphql(run_stage=run_stage)
+        self.role = role # applicant, trainee, staff
+        self.sname= sname
         
 
     
     def get_staff_data(self):
         """
-        Function to read application from google sheet. 
+        Function to read staff data from specified sheet from google sheet. 
         Args: 
             sid_application: sheet id for the staff information 
         Returns:
             df: dataframe
         """
 
-        gd = gsheet(sheetid="1mG8uNDxaDfNq-iRi-_-mgsz5rArkrMPAXtV8IR53xXM",
+
+        if self.sid_application:
+            gd = gsheet(sheetid=self.sid_application,
+                        fauth='admin-10ac-service.json')
+        else:
+
+            gd = gsheet(sheetid="1mG8uNDxaDfNq-iRi-_-mgsz5rArkrMPAXtV8IR53xXM",
                     fauth='admin-10ac-service.json')
-        sname = f'Form responses 1'
+   
 
         try:
-            df = gd.get_sheet_df(sname)
+            df = gd.get_sheet_df(self.sname)
 
             # print(df.head())
-            print(f'------------{sname} df.shape={df.shape}----')
+            print(f'------------{self.sname} df.shape={df.shape}----')
 
         except Exception as e:
-            print(f'ERROR: Could not obtain sheet for {sname}', e)
+            print(f'ERROR: Could not obtain sheet for {self.sname}', e)
 
         return df
 
-    def insert_user(self, df):
-        all_ids= []
-        allemail =[]
-        for indx, items in df.iterrows():
-        
-                email = items['email']
-                uname = items['name']
-                # all_user_id = items['all_users']
-                print(email, uname,)
-                
-                query = """mutation createUser($username:String!,$email:String!) { register(input: { username: $username, email: $email, password: $email } ) { user { id username email }  } }"""
-                variables = {"username": uname, "email":email}
-                result_json = self.sg.Select_from_table(query=query, variables= variables)
-                print( result_json)
-                all_ids.append(result_json['data']['register']['user']['id'])
-                allemail.append(result_json['data']['register']['user']['email'])
-        
-        return all_ids, allemail
+    def insert_user(self, user_data):
+        """
+        A function to insert user data into the database.
+
+        Parameters:
+            user_data (dict): A dictionary containing user data with keys 'email' and 'name'.
+
+        Returns:
+            int: The user ID of the newly created user.
+        """
+        result_json = self.cm.create_user(self.sg, user_data)
+        try:
+            user_id = result_json['data']['register']['user']['id']
+        except:
+            print("ERROR: Could not create user....................", user_data)
+            user_id = 0
+       
+        return  user_id 
 
     def get_applicant_data(self):
         """
@@ -83,16 +88,16 @@ class InsertAllUsers:
 
         gd = gsheet(sheetid=self.sid_application,
                     fauth='admin-10ac-service.json')
-        sname = f'Form responses 1'
+    
 
         try:
-            df = gd.get_sheet_df(sname)
+            df = gd.get_sheet_df(self.sname)
 
             # print(df.head())
-            print(f'------------{sname} df.shape={df.shape}----')
+            print(f'------------{self.sname} df.shape={df.shape}----')
 
         except Exception as e:
-            print(f'ERROR: Could not obtain sheet for {sname}', e)
+            print(f'ERROR: Could not obtain sheet for {self.sname}', e)
 
         return df
 
@@ -125,8 +130,8 @@ class InsertAllUsers:
 
         app_df = self.get_applicant_data()
         df = app_df.T
-        df['Timestamp'] = df['Timestamp'].apply(
-            lambda x: datetime.datetime.strptime(x, "%d/%m/%Y %H:%M:%S"))
+        # df['Timestamp'] = df['Timestamp'].apply(
+        #     lambda x: datetime.datetime.strptime(x, "%d/%m/%Y %H:%M:%S"))
 
         df['Batch'] = self.batch
 
@@ -136,34 +141,46 @@ class InsertAllUsers:
             df.rename(columns={cols: db_col}, inplace=True)
         df = df.replace(r'^\s+$', np.nan, regex=True)
 
-        df['Name'] = df.apply(lambda x: self.change_name_fullname(x), axis=1)
-        df['Name'] = df['Name'].apply(lambda x: x.title())
-        df['email'] = df['email'].apply(lambda x: x.strip().lower())
+        # df['Name'] = df.apply(lambda x: self.change_name_fullname(x), axis=1)
+        df['Name'] = df['Name'].apply(lambda x: x.strip().title())
+        ## remove -. from name in df 
+        df['Name'] = df['Name'].apply(lambda x: x.replace('-', '').replace('.', '').replace('  ', ' '))
+
+        df['Email'] = df['Email'].apply(lambda x: x.strip().lower())
         return df
 
     def prepare_applicants(self):
 
         df = self.process_dataframe()
         df = df.replace('', 'null')
-        user_df = df[['email', 'Name']]
-        user_df.rename(columns={'Name': 'name'}, inplace=True)
+      
+
+        user_df = df[['Email', 'Name', 'Country', 'gender']]
+        user_df.rename(columns={'Name': 'name', 'Email': 'email'}, inplace=True)
         user_df['role'] = "applicant"
         user_df['Batch'] = int(df['batch'][1].split("-")[1])
         return user_df
 
-    # def insert_all_users(self, table):
-
-    #     df = self.prepare_applicants()
-    #     result = df.to_json(orient="records", date_format='iso')
-    #     # sm = StrapiMethods(root="dev-cms", ssmkey="dev/strapi/token" )
-
-    #     for data in json.loads(result):
-    #         # print(data)
-    #         r = self.sm.insert_data(data, table, self.sm.token['token'])
-    #         print(r)
-    #         # break
-    #     print("All records are inserted")
+    def process_user_and_alluser_insertion(self):
+        df = self.prepare_applicants()
+        df =  df[48:]
+        for i, row in df.iterrows():
+            res_dict = {
+                "name": row['name'],
+                "email": row['email'],
+                "role": row['role'],
+                "batch": row['Batch'],
+            }
+            userId = self.insert_user( row)
+            if userId == 0:
+                continue
+            res_dict['userId']= userId
+            res = self.cm.insert_all_users(res_dict)
+            print(res)
+        print ("All recored hase been inserted successfully")
     
+    
+
     def select_users_from_allusers(self):
         """
         Function to preprocess trainee information  
@@ -171,26 +188,10 @@ class InsertAllUsers:
         Returns:
             df: dataframe
         """
-        query = """ query getAllUser($batch:Int,$role:String){
-                allUsers(pagination:{start:0, limit:2000} filters:{Batch:{eq:$batch}, role:{eq:$role}}){
-                    meta{
-                    pagination{
-                        total
-                    }
-                    }
-                    data{
-                    id
-                    attributes{
-                        name
-                        email
-                        Batch
-                    }
-                    }
-                }
-                }
-            """
-        result_json = self.sg.Select_from_table(query=query, variables={"batch":self.batch, "role": self.role})
-
+      
+        batch = int(self.batch.split("-")[1])
+        req_params = {"batch":batch, "role":self.role}
+        result_json = self.cm.read_all_users(self.sg, req_params)
         df = pd.json_normalize(result_json['data']['allUsers']['data'])
         df.rename(columns={"attributes.name": "name", "attributes.email": "Email",
                     "attributes.Batch": "batches", 'id':'all_user'}, inplace=True)
@@ -198,34 +199,8 @@ class InsertAllUsers:
         df = df.drop(columns=['name'])
         return df
 
-    def insert_staff_all_users(self):
-        """
-        Function to insert staff to user and all user table. 
-        
-        Returns:
-            df: dataframe
-        """
 
-        staff_df = self.get_staff_data()
-        df = staff_df.T
-        df.rename(columns={'Name': 'name', 'Role': 'role',
-                  "Email": "email"}, inplace=True)
-        all_ids, allemail = self.insert_user(df=df)
-        df['user']=all_ids
-        df['uemail']=allemail
-        table =f"https://{self.root}.10academy.org/api/all-users"
-        for i,row in df.iterrows():
-            row_dict = {
-                    "name":row['name'],
-                    "email":row['email'],
-                    "role":row['role'],
-                    "Batch":row['Batch'],
-                    "user":row['user'],
-            }
-            r = self.sm.insert_data(row_dict, table, self.sm.token['token'])
-            print(r)
-      
-        print("All records are inserted")
+
 
     def insert_reviewers(self):
         """
@@ -234,17 +209,25 @@ class InsertAllUsers:
         Returns:
            
         """
-
+        batch = self.get_batch()
         df =self.select_users_from_allusers()
         df.rename(columns={'id':'all_user','Batch':'batches','email':'Email'}, inplace=True)
-        table = f"https://{self.root}.10academy.org/api/reviewers"
-        result = df.to_json(orient="records", date_format='iso')
+        df= df[['all_user', 'Email']]
+    
+        df['batches']= batch
+
+
+        for i, row in df.iterrows():
+            res = self.cm.create_reviewer(self.sg, row)
+            print(res)
+        # table = f"https://{self.root}.10academy.org/api/reviewers"
+        # result = df.to_json(orient="records", date_format='iso')
         
 
-        for data in json.loads(result):
-            print(data)
-            r = self.sm.insert_data(data, table, self.sm.token['token'])
-            print(r)
+        # for data in json.loads(result):
+        #     print(data)
+        #     r = self.sm.insert_data(data, table, self.sm.token['token'])
+        #     print(r)
             # break
         print("All records are inserted")
 
@@ -261,15 +244,17 @@ class InsertAllUsers:
    
         adf.rename(columns={'all_user':'all_users','name':'Name'}, inplace=True)
         ids = adf['all_users'].to_list()
-        table = f"https://{self.root}.10academy.org/api/groups"
+  
+        table = "groups"
+        # table = f"https://{self.root}.10academy.org/api/groups"
       
-        batch_name = "B"+str(self.batch)
+        batch_name = "B"+str(self.batch.split("-")[1])#+ "-"+ "w0"
         data={'Name':batch_name,'all_users':ids}
 
-        r = self.sm.insert_data(data, table, self.sm.token['token'])
+        r = self.sm.insert_data(data, table)
         print(r)
     
-# for Trainees 
+######################################################### for Trainees with review 
     def get_quiz_result(self, sid_quiz):
 
         gd = gsheet(sheetid=sid_quiz, fauth='admin-10ac-service.json')
@@ -730,4 +715,130 @@ class InsertAllUsers:
                     print(r)
   
         return df_selected
+
+
+
+
+    ########################################################
+    ### Insertion of profile information 
     
+    def extract_last_name(self, name):
+        parts = name.split()
+        # Return everything except the first part
+        return ' '.join(parts[1:]) if len(parts) > 1 else ''
+
+
+    def process_profile_information_insertion(self):
+        df = self.prepare_applicants()
+        adf = self.select_users_from_allusers()
+        adf.rename(columns={"Email":"email"}, inplace=True)
+        ddf =  df.merge(adf, on="email", how="left")
+        ddf['role'] = "trainee"
+
+        ddf['last_name'] = ddf['name'].apply(self.extract_last_name)
+
+        ddf['first_name'] = ddf['name'].str.split(' ').str[0]
+
+        for i, row in ddf.iterrows():
+            print("processing..................", row['email'])
+            dict_res = {
+                "firstName": row['first_name'],
+                "surName": row['last_name'],
+                "nationality": row['Country'],
+                "gender": row['gender'],
+                "email": row['email'],
+                "alluser": row['all_user']
+                    }
+            res = self.insert_profile_information(dict_res)
+            print(res)
+        print("All records have been inserted successfully")
+
+
+
+    ###################################################################
+    ### To insert traineees
+    def get_batch (self):
+        """
+            Function to get current batch from strapi graphql
+
+        Args:
+            Self.batch (Int): Number that represent current batch 
+
+        Returns:
+            Strapi Id of the imputed batch 
+        """
+        
+        batch = int(self.batch.split("-")[1])
+        print(batch )
+        batch_json = self.cm.read_batch_information(self.sg, {'batch': batch})
+      
+        batchdf =  pd.json_normalize(batch_json['data']['batches']['data'])
+        batch  = batchdf[batchdf['attributes.Batch']==batch]
+        return int(batch['id'])
+    
+    def generate_uuid(self):
+        """Generate a unique UUID."""
+        uuid_value = uuid.uuid4()
+
+        return str( uuid_value )
+    
+    def process_for_trainee_submission(self):
+        batch = self.get_batch()
+        adf = self.select_users_from_allusers()
+        adf.rename(columns={"Email":"email"}, inplace=True)
+        adf = adf[['all_user','email']]
+ 
+        adf['batch'] =  str(batch)
+        ### create UUID for all trainee
+        adf['trainee_id'] = adf['email'].apply(lambda x: self.generate_uuid())
+        adf['Status'] ="Accepted"
+        
+        print("INFO:Total number of newly accepted with trainee ",adf.shape)
+        result = adf.to_json(orient="records", date_format = 'iso')
+        
+        url = f"https://{self.root}.10academy.org/api/trainees"
+
+        for single in json.loads(result):
+            print(single)
+            r= self.sm.insert_data(single,url,self.sm.token['token'])
+            print(r)
+
+        print("All records have been inserted successfully")
+        
+
+ 
+
+
+       
+    ####################
+    def get_batch_specific_reviewers(self):
+        """
+            Function to get current batch from strapi graphql
+
+        Args:
+            Self.batch (Int): Number that represent current batch 
+
+        Returns:
+            Strapi Id of the imputed batch 
+        """
+        bquery = """
+
+            query getReviewer($batch: Int) {
+                    reviewers(
+                        pagination: { start: 0, limit: 100 }
+                        filters: { batches: { Batch: { eq: $batch } } }
+                    ) {
+                        data {
+                        id
+                        attributes {
+                            Email
+                        }
+                        }
+                    }
+                    }
+            """
+        batch = int(self.batch.split("-")[1])
+        print(batch)
+        # batch =  str(batch)
+        batchJson = self.sg.Select_from_table(query=bquery, variables={"batch": batch})
+        return batchJson
