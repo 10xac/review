@@ -1,16 +1,9 @@
 from __future__ import print_function
 import os, sys
-curdir = os.path.dirname(os.path.realpath(__file__))
-cpath = os.path.dirname(curdir)
-if not cpath in sys.path:
-    sys.path.append(cpath)
 import pickle
 import os.path
-import io
 import json
 
-import cachetools.func
-import functools
 
 import numpy as np
 import pandas as pd
@@ -21,7 +14,8 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from google.oauth2 import service_account
 
-from secret import get_auth
+
+from utils.secret import get_auth
 
 #https://developers.google.com/classroom/guides/auth
 class gauth():
@@ -107,7 +101,7 @@ class google_api():
                             fconfig=self.fauth)
         else:
             auth = json.load(open(self.fauth,'r'))
-
+       
             
         if auth.get("type",'')=="service_account":
             print(f'****** using service account: {self.fauth}')
@@ -260,7 +254,7 @@ class gsheet(google_api):
 
         #df = df[:,self.key_columns].dropna(axis='columns', thresh=0.95) 
         
-        return df.T
+        return df
 
     def create_sheet(self,title):
 
@@ -353,7 +347,8 @@ class gsheet(google_api):
 
         print('{0} cells updated.'.format(result.get('updatedCells')))        
         
-        return result        
+        return result  
+       
 if '__main__' == __name__:
     sid_radar = '15m7txkNxxMzHaONkS3kqpFJRMhGKUBaeWFGITfVmuLY'
     gd = gsheet(sheetid=sid_radar,fauth='gdrive_10acad_auth.json')

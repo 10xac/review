@@ -7,24 +7,36 @@ import requests
 import json
 import os,sys
 import numpy as np
+import os, sys
 curdir = os.path.dirname(os.path.realpath(__file__))
-print(curdir)
 cpath = os.path.dirname(curdir)
+print(cpath)
 if not cpath in sys.path:
     sys.path.append(cpath)
 
-from secret import get_auth
+from utils.secret import get_auth, lambda_friendly_path
 
 
+import utils.config as config
 
 class StrapiGraphql():
-    def __init__(self, root='stage-cms', ssmkey="dev/strapi/token"):
+    def __init__(self, **kwargs):
+
+        run_stage =  kwargs.get('run_stage',config.strapi.stage)
+        
+        print('StrapiGraphql run_stage:', run_stage)
+        root, ssmkey = config.get_strapi_params(run_stage)
+           
+
+
         self.apiroot = f"https://{root}.10academy.org/graphql" 
         self.ssmkey = ssmkey
         
-        self.token= get_auth(ssmkey,envvar='STRAPI_TOKEN',
-                fconfig=f'{cpath}/.env/{root}.json')
-        self.headers = {"Authorization": f"Bearer {self.token['token']}"}
+        self.token = get_auth(ssmkey,
+                             envvar='STRAPI_TOKEN',
+                             fconfig=lambda_friendly_path(f'.env/{root}.json'))
+
+        self.headers = {"Authorization": f"Bearer {self.token}"}
       
     
     

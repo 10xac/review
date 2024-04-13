@@ -5,23 +5,34 @@ import requests
 import json
 import os,sys
 import numpy as np
+
+# from pathfig import *
+import os, sys
 curdir = os.path.dirname(os.path.realpath(__file__))
-print(curdir)
 cpath = os.path.dirname(curdir)
+print(cpath)
 if not cpath in sys.path:
     sys.path.append(cpath)
-
-from secret import get_auth
+from utils.secret import get_auth, lambda_friendly_path
+import utils.config as config
 
 
 class StrapiMethods:
-    def __init__(self,root = 'dev-cms', ssmkey = 'dev/strapi/token'):
-        self.api_url = "https://dev-cms.10academy.org"
+    def __init__(self, **kwargs):
+
+        run_stage =  config.strapi.stage
+        root = config.strapi.root
+        ssmkey = config.strapi.ssmkey     
+        self.api_url = f"https://{root}.10academy.org"
+       
+        self.ssmkey = ssmkey
         
-        self.token = get_auth(ssmkey=ssmkey,
-                 envvar='STRAPI_TOKEN',
-                 fconfig=f'{cpath}/.env/{root}.json')
-        
+        self.token = get_auth(ssmkey,
+                             envvar='STRAPI_TOKEN',
+                             fconfig=lambda_friendly_path(f'.env/{root}.json'))
+
+        self.headers = {"Authorization": f"Bearer {self.token}"}
+
         
 
     def fetch_data(self,table, token):
@@ -46,8 +57,9 @@ class StrapiMethods:
         })
         
         
-    def insert_data (self,data,table,token ):
-      
+    def insert_data (self,data, table):
+        table = self.api_url +"/api/"+ table
+        print(table)
         try:
             r = requests.post(
 
@@ -57,7 +69,7 @@ class StrapiMethods:
                 # self.token['token']
                 headers = {
 
-                "Authorization": f"Bearer {token}", 
+                "Authorization": f"Bearer {self.token}", 
 
                 "Content-Type": "application/json"}
 
@@ -66,18 +78,4 @@ class StrapiMethods:
             print(e)
         return r
     
-    
-
-   
-        
-    
-        
-
- 
-
-if __name__ == "__main__":
-    obj = StrapiMethods()
-    # table= "/api/title-trainees"
-    
-    table= "https://dev-cms.10academy.org/api/applicant-informations"
   
