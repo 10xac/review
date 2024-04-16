@@ -262,3 +262,52 @@ class CommunicationManager:
                     }"""
         result_json = sg.Select_from_table(query=query, variables= row)
         return result_json
+    
+    def read_accepted_trainee(self,sg, trainee_params):
+        bquery = """
+                query get_trainee ($batch:Int, $status:String){
+                    trainees(
+                        pagination: { start: 0, limit: 1000 }
+                        filters: { batch: { Batch: { eq: $batch } }, Status: { eq: $status } }
+                    ) {
+                        meta {
+                        pagination {
+                            total
+                        }
+                        }
+                        data {
+                        attributes {
+                            email
+                            all_user {
+                            data {
+                                id
+                                attributes {
+                                email
+                                }
+                            }
+                            }
+                        }
+                        }
+                    }
+                    }
+            """
+        traineeJson = sg.Select_from_table(
+                                            query=bquery, 
+                                            variables={"batch": trainee_params['batch'], 
+                                                           "status": trainee_params['status']})
+        return traineeJson
+
+    def update_review_category_with_revewers(self, sg, reviview_category_params):
+        query = """mutation updateReviewCategoryReviewers($id:ID!,$reviewers:[ID]){
+            updateReviewCategory(id:$id,data:{reviewers:$reviewers}){
+            data{
+                attributes{
+                name
+                }
+            }
+            }
+        }"""
+
+        res = sg.Select_from_table(query = query, variables={'id': reviview_category_params['review_category_id'], 
+                                                             'reviewers':reviview_category_params['reviewers']})
+        return res

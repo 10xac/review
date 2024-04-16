@@ -164,6 +164,8 @@ class StaffInformationProcessor:
         """
         batch = self.get_batch_id()
         df =self.select_users_from_allusers()
+        df_current_reviewers = self.get_staff_data()
+        df = df[df['Email'].isin(df_current_reviewers['Email'])]
         df.rename(columns={'id':'all_user','Batch':'batches','email':'Email'}, inplace=True)
         df= df[['all_user', 'Email']]
     
@@ -210,7 +212,8 @@ class StaffInformationProcessor:
         df = pd.DataFrame(user_details)
         all_df = pd.merge(staff_df, df, on='user_email', how='left')
 
-        default_setting =  {"batch": self.get_batch_id(),"batchID": self.configs.batch}
+        default_setting =  {"batch": self.configs.batch ,"batchID":self.get_batch_id() }
+     
 
         for i, row in all_df.iterrows():
             
