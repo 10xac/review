@@ -257,7 +257,7 @@ class TraineeInformationProcesssor:
   
         table = "groups"
       
-        batch_name = "B"+str(self.batch.split("-")[1])#+ "-"+ "w0"
+        batch_name = "B"+str(self.configs.batch)#+ "-"+ "w0"
         data={'Name':batch_name,'all_users':ids}
 
         r = self.sm.insert_data(data, table)
@@ -280,7 +280,7 @@ class TraineeInformationProcesssor:
         Returns:
             Strapi Id of the imputed batch 
         """
-       
+    
         batch = int(self.configs.batch)
         batch_json = self.cm.read_batch_information(self.sg, {'batch': batch})
         batchdf =  pd.json_normalize(batch_json['data']['batches']['data'])
