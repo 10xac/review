@@ -75,8 +75,8 @@ def get_strapi_params(stage):
     elif stage.lower().startswith('apply'):
         root='apply-cms'
         ssmkey="APPLY_PROD_STRAPI_TOKEN" 
-    elif stage.lower().startswith('devu2j'):
-        root='dev-u2j-cms'
+    elif stage.lower().startswith('devu2j'):#https://dev-u2jcms.10academy.org/graphql
+        root='dev-u2jcms'#'dev-u2j-cms'
         ssmkey="U2J_DEV_STRAPI_TOKEN" 
     elif stage.lower().startswith('u2j'):
         root='u2jcms'

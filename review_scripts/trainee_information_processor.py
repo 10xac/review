@@ -19,11 +19,11 @@ from utils.gdrive import gsheet
 
 
 ### change this for different run configurations
-from run_configs import u2j_trainee_config
-
+# from run_configs import u2j_trainee_config
+from run_configs import u2j_batch2_trainee_config
 class TraineeInformationProcesssor:
     def __init__(self):
-        self.configs = u2j_trainee_config
+        self.configs = u2j_batch2_trainee_config
         self.run_stage = self.configs.run_stage
         self.sg = StrapiGraphql(run_stage=self.configs.run_stage)
         self.sm = StrapiMethods(run_stage=self.configs.run_stage)
@@ -139,7 +139,7 @@ class TraineeInformationProcesssor:
     
     def process_user_and_alluser_insertion(self):
         df = self.prepare_applicants()
-        df = df[81:]
+        # df = df[81:]
         # Calculate the number of chunks needed
         num_chunks = (len(df) + 19) // 20  # This ensures that even the last chunk less than 50 rows is processed
 
@@ -157,11 +157,11 @@ class TraineeInformationProcesssor:
                     "batch": row['Batch'],
                 }
                 userId = self.insert_user(res_dict)
-                if userId == 0:
-                    continue
-                res_dict['userId'] = userId
-                res = self.cm.insert_all_users(self.sg, res_dict)
-                print(res)
+                # if userId == 0:
+                    # continue
+                # res_dict['userId'] = userId
+                # res = self.cm.insert_all_users(self.sg, res_dict)
+                # print(res)
 
             # Print the chunk processing status
             print(f"Processed rows {start_index + 1} to {end_index}")
@@ -170,7 +170,7 @@ class TraineeInformationProcesssor:
             if chunk < num_chunks - 1:
                 print("Pausing for 5 minutes...")
                 time.sleep(200)
-
+            
         print("All records have been inserted successfully")
     
 
