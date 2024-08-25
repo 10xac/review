@@ -20,10 +20,18 @@ from utils.gdrive import gsheet
 
 ### change this for different run configurations
 # from run_configs import u2j_trainee_config
+# from run_configs import  kiam_batch2_trainee_config
 from run_configs import u2j_batch2_trainee_config
+
+# def training_mapper(run_stage):
+
+
 class TraineeInformationProcesssor:
-    def __init__(self):
-        self.configs = u2j_batch2_trainee_config
+    def __init__(self, Kwargs = None):
+        if "configs" in Kwargs:
+            self.configs = Kwargs["configs"]
+        else:
+            self.configs = u2j_batch2_trainee_config #kiam_batch2_trainee_config
         self.run_stage = self.configs.run_stage
         self.sg = StrapiGraphql(run_stage=self.configs.run_stage)
         self.sm = StrapiMethods(run_stage=self.configs.run_stage)
@@ -169,7 +177,7 @@ class TraineeInformationProcesssor:
             # If not the last chunk, pause for 5 minutes
             if chunk < num_chunks - 1:
                 print("Pausing for 5 minutes...")
-                time.sleep(200)
+                time.sleep(20)
             
         print("All records have been inserted successfully")
     

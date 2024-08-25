@@ -20,11 +20,14 @@ import utils.config as config
 class StrapiMethods:
     def __init__(self, **kwargs):
 
-        run_stage =  config.strapi.stage
-        root = config.strapi.root
-        ssmkey = config.strapi.ssmkey     
-        self.api_url = f"https://{root}.10academy.org"
-       
+        run_stage =  kwargs.get('run_stage',config.strapi.stage)
+        
+        print('Strapimethods run_stage:', run_stage)
+        root, ssmkey = config.get_strapi_params(run_stage)
+           
+
+
+        self.apiroot = f"https://{root}.10academy.org" 
         self.ssmkey = ssmkey
         
         self.token = get_auth(ssmkey,
@@ -32,8 +35,8 @@ class StrapiMethods:
                              fconfig=lambda_friendly_path(f'.env/{root}.json'))
 
         self.headers = {"Authorization": f"Bearer {self.token}"}
+      
 
-        
 
     def fetch_data(self,table, token):
        
@@ -58,7 +61,7 @@ class StrapiMethods:
         
         
     def insert_data (self,data, table):
-        table = self.api_url +"/api/"+ table
+        table = self.apiroot +"/api/"+ table
         print(table)
         try:
             r = requests.post(

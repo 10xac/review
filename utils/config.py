@@ -81,6 +81,9 @@ def get_strapi_params(stage):
     elif stage.lower().startswith('u2j'):
         root='u2jcms'
         ssmkey="U2J_PROD_STRAPI_TOKEN"
+    elif stage.lower().startswith('kaim'):
+        root='kaimcms'
+        ssmkey="KAIM_PROD_STRAPI_TOKEN"
     elif stage.lower().startswith('prod'):
         root='cms'
         ssmkey="TENX_PROD_STRAPI_TOKEN" 

@@ -311,3 +311,112 @@ class CommunicationManager:
         res = sg.Select_from_table(query = query, variables={'id': reviview_category_params['review_category_id'], 
                                                              'reviewers':reviview_category_params['reviewers']})
         return res
+    def get_user_with_out_alluser( self, sg, role):
+        query = """query getAllTrainees($role:String){
+            usersPermissionsUsers(filters:{
+                all_users:{id:{eq:null}}
+                role:{name:{eq:$role}}}
+            pagination:{start:0,limit:2000}){
+                meta{
+                pagination{
+                    total
+                }
+                }
+                data{
+                id
+                attributes{
+                    email
+                    username
+                    all_users{
+                    data{
+                        attributes{
+                        name
+                        }
+                    }
+                    }
+                }
+                }
+            }
+            }"""
+        result_json = sg.Select_from_table(query=query,variables =  {"role":role})
+        return result_json
+    
+    def update_batch_user_for_group(self, sg, groupid : int, all_users_for_group):
+        update_query = """mutation updateGroup($groupID:ID!,$allusersID:[ID]){
+        updateGroup(id:$groupID,data:{all_users:$allusersID}){
+            data{
+            id
+            }
+        }
+        }"""
+        resu_json = sg.Select_from_table(query=update_query, variables={"groupID":groupid,"allusersID":all_users_for_group})
+        print(resu_json)
+        return resu_json
+    
+    def get_allUser_by_groupId(self, sg, groupId):
+        query = """query getallUserID($groupID:ID){
+        allUsers(
+            pagination:{start:0,limit:2000}
+            filters:{groups:{id:{eq:$groupID}}}){
+            meta{
+            pagination{
+                total
+            }
+            }
+            data{
+            id
+            }
+        }
+        }"""
+        resu_json = sg.Select_from_table(query=query, variables={"groupID":groupId})
+        with_group = [str(i['id']) for i in resu_json['data']['allUsers']['data']]
+        return with_group
+    
+    def get_all_user_without_group (self, sg):
+        query = """query getallUserID{
+        allUsers(
+            pagination:{start:0,limit:2000}
+            filters:{groups:{id:{eq:null}}}){
+            meta{
+            pagination{
+                total
+            }
+            }
+            data{
+            id
+            }
+        }
+        }"""
+        result_json = sg.Select_from_table(query=query, variables=None)
+        without_group = [str(i['id']) for i in result_json['data']['allUsers']['data']]
+        return without_group
+    
+    def get_user_with_out_alluser( self, sg, role):
+        query = """query getAllTrainees($role:String){
+  usersPermissionsUsers(filters:{
+    all_users:{id:{eq:null}}
+    role:{name:{eq:$role}}}
+  pagination:{start:0,limit:2000}){
+    meta{
+      pagination{
+        total
+      }
+    }
+    data{
+      id
+      attributes{
+        email
+        username
+        all_users{
+          data{
+            attributes{
+              name
+            }
+          }
+        }
+      }
+    }
+  }
+}"""
+        result_json = sg.Select_from_table(query=query,variables =  {"role":role})
+        return result_json
