@@ -31,7 +31,7 @@ class TraineeInformationProcesssor:
         if "configs" in Kwargs:
             self.configs = Kwargs["configs"]
         else:
-            self.configs = u2j_batch2_trainee_config #kiam_batch2_trainee_config
+            self.configs = u2j_batch2_trainee_config 
         self.run_stage = self.configs.run_stage
         self.sg = StrapiGraphql(run_stage=self.configs.run_stage)
         self.sm = StrapiMethods(run_stage=self.configs.run_stage)
@@ -217,7 +217,7 @@ class TraineeInformationProcesssor:
 
         ddf['last_name'] = ddf['name'].apply(self.extract_last_name)
         ddf['first_name'] = ddf['name'].str.split(' ').str[0]
-
+   
         # Determine the number of chunks needed
         num_chunks = (len(ddf) + 49) // 50  # Rounds up to include all records
 
@@ -245,7 +245,7 @@ class TraineeInformationProcesssor:
             # If not the last chunk, pause for 5 minutes
             if chunk < num_chunks - 1:
                 print("Pausing for 5 minutes...")
-                time.sleep(300)  # Sleep for 300 seconds or 5 minutes
+                time.sleep(20)  # Sleep for 300 seconds or 5 minutes
 
         print("All records have been inserted successfully")
 
