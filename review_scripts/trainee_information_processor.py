@@ -117,7 +117,7 @@ class TraineeInformationProcesssor:
         to_standardize_name = ['Name', 'Full Name', 'fullname']
         contry_or_nationality  = ['Nationality', 'Country']
         # Create a dictionary to map old column names to a new name
-        rename_dict = {col: 'Name' for col in df.columns if col in to_standardize_name}
+        rename_dict = {col: 'Name' for col in df.columns if col.strip() in to_standardize_name}
         sec_rename_dict= {col: 'Country' for col in df.columns if col in contry_or_nationality}
         df.rename(columns=rename_dict, inplace=True)
         df.rename(columns=sec_rename_dict, inplace=True)
@@ -139,11 +139,13 @@ class TraineeInformationProcesssor:
         rename_dict= {col: 'gender' for col in df.columns if col in gender}
         df.rename(columns=rename_dict, inplace=True)
 
-        user_df = df[['Email', 'Name', 'Country', 'gender']]
-        user_df.rename(columns={'Name': 'name', 'Email': 'email'}, inplace=True)
-        user_df['role'] = self.configs.role
-        user_df['Batch'] = int(self.configs.batch)
-        return user_df
+        # user_df = df[['Email', 'Name', 'Country', 'gender']]
+        df.rename(columns={'Name': 'name', 'Email': 'email'}, inplace=True)
+        df['Date of Birth'] = pd.to_datetime(df['Date of Birth'])
+        df = df[df['Section'] == 'A']
+        df['role'] = self.configs.role
+        df['Batch'] = int(self.configs.batch)
+        return df
     
     def process_user_and_alluser_insertion(self):
         df = self.prepare_applicants()
@@ -207,9 +209,19 @@ class TraineeInformationProcesssor:
         df = df.drop(columns=['name'])
         return df
 
-
+    def process_vulnerable_column(self, value):
+        if value == 'null' or pd.isna(value):  # Handle both 'null' strings and NaN
+            value = ""
+        return {"vulnerable": value}  # Directly convert to the JSON format
     def process_profile_information_insertion(self):
         df = self.prepare_applicants()
+        # clean vulnerable column to make it json
+        if 'Vulnerable' in df.columns:
+            df['other_info'] = df['Vulnerable'].apply(self.process_vulnerable_column)
+        else:
+            ### df other_info column empty dictionary
+            df['other_info'] = df.apply(lambda x: {'vulnerable': ''}, axis=1)
+
         adf = self.select_batch_users_from_allusers()
         adf.rename(columns={"Email": "email"}, inplace=True)
         ddf = df.merge(adf, on="email", how="left")
@@ -217,37 +229,48 @@ class TraineeInformationProcesssor:
 
         ddf['last_name'] = ddf['name'].apply(self.extract_last_name)
         ddf['first_name'] = ddf['name'].str.split(' ').str[0]
-   
+        ddf['Date of Birth'] = ddf['Date of Birth'].dt.strftime('%Y-%m-%d')
+
+
+        ddf.rename(columns={"Date of Birth":"date_of_birth"}, inplace=True) 
+
+        for i, row in ddf.iterrows():
+            print("processing..................", row['email'])
+            res = self.cm.insert_profile_information(self.sg, row)
+            print(res)
         # Determine the number of chunks needed
-        num_chunks = (len(ddf) + 49) // 50  # Rounds up to include all records
+        # num_chunks = (len(ddf) + 49) // 50  # Rounds up to include all records
 
-        for chunk in range(num_chunks):
-            start_index = chunk * 50
-            end_index = start_index + 50
-            df_chunk = ddf.iloc[start_index:end_index]  # Get the current chunk
+        # for chunk in range(num_chunks):
+        #     start_index = chunk * 50
+        #     end_index = start_index + 50
+        #     df_chunk = ddf.iloc[start_index:end_index]  # Get the current chunk
 
-            for i, row in df_chunk.iterrows():
-                print("processing..................", row['email'])
-                dict_res = {
-                    "firstName": row['first_name'],
-                    "surName": row['last_name'],
-                    "nationality": row['Country'],
-                    "gender": row['gender'],
-                    "email": row['email'],
-                    "alluser": row['all_user']
-                }
-                res = self.cm.insert_profile_information(self.sg, dict_res)
-                print(res)
+        #     for i, row in df_chunk.iterrows():
+        #         print("processing..................", row['email'])
+        #         # dict_res = {
+        #         #     "firstName": row['first_name'],
+        #         #     "surName": row['last_name'],
+        #         #     "nationality": row['Country'],
+        #         #     "gender": row['gender'],
+        #         #     "email": row['email'],
+        #         #     "alluser": row['all_user'],
+        #         #     "other_info": row['other_info']
+        #         # }
+      
+        #         res = self.cm.insert_profile_information(self.sg, row)
+        #         print(res)
 
-            # Print chunk processing status
-            print(f"Processed rows {start_index + 1} to min({end_index}, {len(ddf)})")
+        #     # Print chunk processing status
+        #     print(f"Processed rows {start_index + 1} to min({end_index}, {len(ddf)})")
 
-            # If not the last chunk, pause for 5 minutes
-            if chunk < num_chunks - 1:
-                print("Pausing for 5 minutes...")
-                time.sleep(20)  # Sleep for 300 seconds or 5 minutes
-
+        #     # If not the last chunk, pause for 5 minutes
+        #     if chunk < num_chunks - 1:
+        #         print("Pausing for 5 minutes...")
+        #         time.sleep(20)  # Sleep for 300 seconds or 5 minutes
         print("All records have been inserted successfully")
+        return ddf
+        
 
 
     def insert_group(self):

@@ -219,7 +219,9 @@ class CommunicationManager:
             $nationality: String
             $gender:String
             $email:String
+  			$date_of_birth:Date
             $alluser:ID
+  			$other_info:JSON
         ) {
             createProfileInformation(
             data: {
@@ -229,6 +231,8 @@ class CommunicationManager:
                 gender:$gender
                 all_user:$alluser
                 email:$email
+              	date_of_birth:$date_of_birth
+              	other_info: $other_info
             }
             ) {
             data {
@@ -236,7 +240,25 @@ class CommunicationManager:
             }
             }
         }"""
-        result_json = sg.Select_from_table(query=query, variables= row)
+        variables= { "firstName": row['first_name'],
+                                                                        "surName": row['last_name'],
+                                                                        "nationality": row["Country"],
+                                                                        "gender": row["gender"],
+                                                                        "alluser": row["all_user"],
+                                                                        "email": row["email"],
+                                                                        "other_info": row["other_info"],
+                                                                        "date_of_birth": row["date_of_birth"]
+                                                                        }
+        print("variables ......", variables)   
+        result_json = sg.Select_from_table(query=query, variables= { "firstName": row['first_name'],
+                                                                        "surName": row['last_name'],
+                                                                        "nationality": row["Country"],
+                                                                        "gender": row["gender"],
+                                                                        "alluser": row["all_user"],
+                                                                        "email": row["email"],
+                                                                        "other_info": row["other_info"],
+                                                                        "date_of_birth": row["date_of_birth"]
+                                                                        })
         return result_json
     
     def insert_trainee_information(self, sg,  row):

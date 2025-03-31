@@ -14,12 +14,13 @@ from review_scripts.strapi_graphql import StrapiGraphql
 from utils.gdrive import gsheet
 
 ### change this for different run configurations
-from run_configs import u2j_staff_config
+# from run_configs import u2j_staff_config
+from run_configs import kepler_batch1_staff_config
 
 
 class StaffInformationProcessor:
     def __init__(self):
-        self.configs = u2j_staff_config
+        self.configs = kepler_batch1_staff_config
         self.run_stage = self.configs.run_stage
         self.sg = StrapiGraphql(run_stage=self.configs.run_stage)
         self.cm = CommunicationManager()
@@ -117,6 +118,7 @@ class StaffInformationProcessor:
             res = self.cm.insert_all_users(self.sg, res_dict)
             print(res)
         print("All records are inserted")
+        
     
 
     def get_batch_id(self):
@@ -170,7 +172,7 @@ class StaffInformationProcessor:
         df= df[['all_user', 'Email']]
     
         df['batches']= batch
-
+      
 
         for i, row in df.iterrows():
             res = self.cm.create_reviewer(self.sg, row)
