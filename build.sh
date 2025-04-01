@@ -1,25 +1,21 @@
-if [ $# -gt 1 ]; then
-        key=$2
-else
-        key="review"
-fi
+#!/bin/bash
 
-docker stop $key || echo "$key instance is not running"
-docker rm $key || echo "no $key instance exist"
-if [ $# -gt 0 ]; then
-    docker stop $(docker ps -aq)
-    docker rm $(docker ps -aq)
-fi
+# Exit on error
+set -e
 
-docker build --tag $key:latest .
+echo "Building application for production..."
 
-#docker-compose up --detach 
+# Stop any existing containers
+echo "Stopping any existing containers..."
+docker-compose down
 
-port=80
-docker run  -p $port:$port -d \
-       --name $key $key:latest 
+# Build and start Docker containers
+echo "Building and starting Docker containers..."
+docker-compose build
+docker-compose up -d
 
-docker logs $key
-
-docker ps -a
-
+echo "Application is now running!"
+echo "Backend API available at: http://localhost:5080"
+echo ""
+echo "To view logs: docker-compose logs -f"
+echo "To stop the application: docker-compose down" 
