@@ -1,8 +1,3 @@
-
-
-
-
-
 class CommunicationManager:
     """All strapi queries are called from here"""
     def __init__(self):
@@ -27,14 +22,15 @@ class CommunicationManager:
     
     def insert_all_users(self,sg, all_user_data):  
         query = """mutation createAllUser($email:String, $userId:ID,
-                    $name:String,$batch:Int, $role:ENUM_ALLUSER_ROLE){
+                    $name:String,$batch:Int, $role:ENUM_ALLUSER_ROLE, $batchId:ID){
                     createAllUser(
                         data:{
                         email:$email,
                         user:$userId,
                         name:$name,
                         role:$role,
-                        Batch:$batch
+                        Batch:$batch, 
+                        BatchIDs:[$batchId]
                         }
                     ){
                         data{
@@ -46,7 +42,8 @@ class CommunicationManager:
         variables =  {"email": all_user_data['email'],"name":all_user_data['name'],
                         "batch":all_user_data['batch'],
                         "userId": all_user_data['userId'], 
-                        "role":all_user_data['role']}
+                        "role":all_user_data['role'],
+                        "batchId": all_user_data['batchId']}
         result_json = sg.Select_from_table(query=query, variables= variables)
         return result_json
     def read_all_users(self,sg, req_params):
@@ -134,6 +131,22 @@ class CommunicationManager:
         # batch = int(self.batch.split("-")[1])
         batchJson = sg.Select_from_table(query=bquery, variables={"batch": batch_params['batch']})
         return batchJson
+    
+    def read_batch_from_batch_ID(self, sg, batch_id):
+        query = """query getBatch($batch_ID:ID){
+            batches(filters: { id:  { eq: $batch_ID } }){
+                data{
+                id
+                attributes{
+                    Batch
+                    
+                }
+                }
+            }
+            }"""
+        batchJson = sg.Select_from_table(query=query, variables={"batch_ID": batch_id})
+     
+        return batchJson
     def create_reviewer(self, sg, reviewer_data):
         query = """mutation createReviewer($allUserID:ID,$email:String,$batch:[ID]){
             createReviewer(data:{all_user:$allUserID,Email:$email,batches:$batch}){
@@ -212,6 +225,15 @@ class CommunicationManager:
         batchJson = sg.Select_from_table(query=bquery, variables={"batch": batch})
         return batchJson
     
+    # @@@@@ profile_data    {'first_name': 'Testapi', 
+    #                        'last_name': 'First', 
+    #                        'email': 'test@example.com', 
+    #                        'nationality': 'Ethiopia',
+    #                         'gender': 'Female', 
+    #                         'date_of_birth': datetime.date(2025, 3, 31), 
+    #                         'all_user': '2285', 'other_info': {'vulnerable': ''}, 
+    #                         'bio': None, 
+    #                         'city_of_residence': None}
     def insert_profile_information(self, sg, row):
         query = """mutation createProfileInformation(
             $firstName: String
@@ -220,8 +242,10 @@ class CommunicationManager:
             $gender:String
             $email:String
   			$date_of_birth:Date
-            $alluser:ID
+            $all_user:ID
   			$other_info:JSON
+            $bio:String
+            $city_of_residence:String
         ) {
             createProfileInformation(
             data: {
@@ -229,10 +253,12 @@ class CommunicationManager:
                 surname: $surName
                 nationality: $nationality
                 gender:$gender
-                all_user:$alluser
+                all_user:$all_user
                 email:$email
               	date_of_birth:$date_of_birth
               	other_info: $other_info
+                bio:$bio
+                city_of_residence:$city_of_residence
             }
             ) {
             data {
@@ -240,25 +266,21 @@ class CommunicationManager:
             }
             }
         }"""
-        variables= { "firstName": row['first_name'],
-                                                                        "surName": row['last_name'],
-                                                                        "nationality": row["Country"],
-                                                                        "gender": row["gender"],
-                                                                        "alluser": row["all_user"],
-                                                                        "email": row["email"],
-                                                                        "other_info": row["other_info"],
-                                                                        "date_of_birth": row["date_of_birth"]
-                                                                        }
-        print("variables ......", variables)   
+        print("row ......", row)    
+        print("rows ......", row['date_of_birth'])
+      
         result_json = sg.Select_from_table(query=query, variables= { "firstName": row['first_name'],
                                                                         "surName": row['last_name'],
-                                                                        "nationality": row["Country"],
+                                                                        "nationality": row["nationality"],
                                                                         "gender": row["gender"],
                                                                         "alluser": row["all_user"],
                                                                         "email": row["email"],
                                                                         "other_info": row["other_info"],
-                                                                        "date_of_birth": row["date_of_birth"]
+                                                                        "date_of_birth": row["date_of_birth"],
+                                                                        "bio": row["bio"],
+                                                                        "city_of_residence": row["city_of_residence"]
                                                                         })
+        # print("result_json ......", result_json)
         return result_json
     
     def insert_trainee_information(self, sg,  row):
@@ -442,3 +464,59 @@ class CommunicationManager:
 }"""
         result_json = sg.Select_from_table(query=query,variables =  {"role":role})
         return result_json
+
+    def delete_user(self, sg, user_id: str):
+        """Delete a user by ID"""
+        query = """
+        mutation deleteUser($id: ID!) {
+            deleteUsersPermissionsUser(id: $id) {
+                data {
+                    id
+                }
+            }
+        }
+        """
+        variables = {"id": user_id}
+        return sg.Select_from_table(query, variables)
+
+    def delete_alluser(self, sg, alluser_id: str):
+        """Delete an alluser by ID"""
+        query = """
+        mutation deleteAllUser($id: ID!) {
+            deleteAllUser(id: $id) {
+                data {
+                    id
+                }
+            }
+        }
+        """
+        variables = {"id": alluser_id}
+        return sg.Select_from_table(query, variables)
+
+    def delete_profile(self, sg, profile_id: str):
+        """Delete a profile by ID"""
+        query = """
+        mutation deleteProfile($id: ID!) {
+            deleteProfile(id: $id) {
+                data {
+                    id
+                }
+            }
+        }
+        """
+        variables = {"id": profile_id}
+        return sg.Select_from_table(query, variables)
+
+    def delete_trainee(self, sg, trainee_id: str):
+        """Delete a trainee by ID"""
+        query = """
+        mutation deleteTrainee($id: ID!) {
+            deleteTrainee(id: $id) {
+                data {
+                    id
+                }
+            }
+        }
+        """
+        variables = {"id": trainee_id}
+        return sg.Select_from_table(query, variables)
