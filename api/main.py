@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from api.routes import trainee_routes
+from api.routes import trainee_routes, batch_routes, webhook_routes
 
-app = FastAPI(title="10 Academy Trainee API")
+app = FastAPI(title="10 Academy User API")
 
 # Configure CORS
 app.add_middleware(
@@ -15,6 +15,8 @@ app.add_middleware(
 
 # Include routers
 app.include_router(trainee_routes.router)
+app.include_router(batch_routes.router)
+app.include_router(webhook_routes.router)
 
 if __name__ == "__main__":
     import uvicorn

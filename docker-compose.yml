@@ -6,10 +6,12 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - RUN_STAGE=prod
+      - RUN_STAGE=dev
       - PORT=8000
       - WORKERS=4
     volumes:
-      - ./.env:/app/.env
-      - ./admin-10ac-service.json:/app/admin-10ac-service.json
+      - ./api:/app/api
+      - ./utils:/app/utils
+      - ./review_scripts:/app/review_scripts
+ 
     restart: unless-stopped

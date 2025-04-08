@@ -26,3 +26,4 @@ sqlalchemy
 
 gspread
 google-api-python-client
+httpx

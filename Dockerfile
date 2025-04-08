@@ -12,13 +12,13 @@ RUN apt-get update && apt-get install -y \
 COPY api/ api/
 COPY utils/ utils/
 COPY review_scripts/ review_scripts/
-COPY requirements.txt start.sh ./
+COPY api/requirements.txt start.sh ./
 
 # Make start script executable
 RUN chmod +x start.sh
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r api/requirements.txt
 
 # Expose port
 EXPOSE 8000

@@ -51,21 +51,58 @@ class DataProcessor:
         if email:
             email = email.strip().lower()
         processed_data['email'] = email
+        
+        processed_data['password'] = getattr(trainee_data, 'password', '')
+        if processed_data['password'] is None or processed_data['password'] == "":
+            processed_data['password'] = processed_data['email']
 
         # Process other fields
         processed_data['nationality'] = getattr(trainee_data, 'nationality', '')
         processed_data['gender'] = getattr(trainee_data, 'gender', '')
-        processed_data['date_of_birth'] = getattr(trainee_data, 'date_of_birth', None)
+        
+        # Handle date_of_birth carefully
+        date_of_birth = getattr(trainee_data, 'date_of_birth', None)
+        if date_of_birth:
+            if isinstance(date_of_birth, str):
+                try:
+                    # Try to parse the date string
+                    from datetime import datetime
+                    parsed_date = datetime.strptime(date_of_birth, '%Y-%m-%d')
+                    processed_data['date_of_birth'] = parsed_date.strftime('%Y-%m-%d')
+                except ValueError:
+                    processed_data['date_of_birth'] = None
+            elif hasattr(date_of_birth, 'strftime'):
+                processed_data['date_of_birth'] = date_of_birth.strftime('%Y-%m-%d')
+            else:
+                processed_data['date_of_birth'] = None
+        else:
+            processed_data['date_of_birth'] = None
+
         processed_data['vulnerable'] = getattr(trainee_data, 'vulnerable', '')
         processed_data['status'] = getattr(trainee_data, 'status', 'Accepted')
+        
+        if processed_data['status'] is None or processed_data['status'] == "":
+            processed_data['status'] = 'Accepted'
 
         # Add config information
         processed_data['role'] = self.config.role
-        processed_data['batch_id'] = int(self.config.batch)
+        if processed_data['role'] is None or processed_data['role'] == "":
+            processed_data['role'] = 'trainee'
+
+        # Handle batch_id
+        if self.config.batch is None or self.config.batch == "":
+            processed_data['batch_id'] = []
+        else:
+            processed_data['batch_id'] = self.config.batch 
+
+        # Handle groups
+        if self.config.group_id is None or self.config.group_id == "":
+            processed_data['groups'] = []
+        else:
+            processed_data['groups'] = [self.config.group_id]
 
         # Validate required fields
-        required_fields = ['name', 'email', 'nationality', 'gender', 'date_of_birth']
-        print(f"processed_data: {processed_data}")
+        required_fields = ['name', 'email']
         missing_fields = [field for field in required_fields if not processed_data.get(field)]
         if missing_fields:
             raise HTTPException(
@@ -143,6 +180,42 @@ class DataProcessor:
         df['Batch'] = int(self.config.batch)
         return df
 
+
+    def find_duplicates(self, df: pd.DataFrame) -> Dict:
+        """
+        Find duplicate entries in the trainee data based on name and email
+        Args:
+            df: Input dataframe with trainee data
+        Returns:
+            Dict: Information about duplicate entries if found
+        """
+        # Create a clean key for comparison (lowercase, trimmed)
+        df['comparison_key'] = df.apply(
+            lambda x: (
+                str(x['name']).lower().strip(),
+                str(x['email']).lower().strip()
+            ),
+            axis=1
+        )
+        
+        # Find duplicates
+        duplicates = df[df['comparison_key'].duplicated(keep=False)]
+        
+        if len(duplicates) > 0:
+            # Group duplicates and format the result
+            duplicate_groups = duplicates.groupby('comparison_key').apply(
+                lambda x: x[['name', 'email']].to_dict('records')
+            ).to_dict()
+            
+            return {
+                "found": True,
+                "count": len(duplicates),
+                "entries": duplicate_groups
+            }
+        
+        return {"found": False, "count": 0, "entries": {}}
+
+
     def process_batch_data(self) -> pd.DataFrame:
         """
         Process the entire batch data pipeline
@@ -152,4 +225,16 @@ class DataProcessor:
         df = self.get_applicant_data()
         df = self.process_dataframe(df)
         df = self.prepare_applicants(df)
-        return df 
+        
+        # Check for duplicates
+        duplicates = self.find_duplicates(df)
+        if duplicates["found"]:
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "message": f"Found {duplicates['count']} duplicate entries",
+                    "duplicates": duplicates['entries']
+                }
+            )
+        
+        return df
