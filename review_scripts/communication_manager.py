@@ -14,36 +14,50 @@ class CommunicationManager:
         Returns:
             result_json: the result of the user creation in JSON format
         """
-        query = """mutation createUser($username:String!,$email:String!) { register(input: { username: $username, email: $email, password: $email } ) { user { id username email }  } }"""
-        variables = {"username": user_data['name'], "email":user_data['email']}
-        print("passed variables ...........",   variables)
+        
+        query = """mutation createUser($username:String!,$email:String!, $password:String!) 
+                    { register(input: { username: $username, email: $email, password: $password } ) 
+                    { user { id username email }  } }"""
+        username = user_data['name']+"_"+ user_data['email']
+
+        variables = {"username": username, "email":user_data['email'], "password":user_data['password']}
+
         result_json = sg.Select_from_table(query=query, variables= variables)
         return result_json
     
     def insert_all_users(self,sg, all_user_data):  
-        query = """mutation createAllUser($email:String, $userId:ID,
-                    $name:String,$batch:Int, $role:ENUM_ALLUSER_ROLE, $batchId:ID){
-                    createAllUser(
-                        data:{
-                        email:$email,
-                        user:$userId,
-                        name:$name,
-                        role:$role,
-                        Batch:$batch, 
-                        BatchIDs:[$batchId]
-                        }
-                    ){
-                        data{
-                        id
-                        }
+        query = """mutation createAllUser(
+                $email: String
+                $userId: ID
+                $name: String
+                $role: ENUM_ALLUSER_ROLE
+                $batchId: [ID]
+                $groups: [ID]
+                ) {
+                createAllUser(
+                    data: {
+                    email: $email
+                    user: $userId
+                    name: $name
+                    role: $role
+                    BatchIDs: $batchId
+                    groups: $groups
                     }
+                ) {
+                    data {
+                    id
                     }
+                }
+                }
+
                     """
         variables =  {"email": all_user_data['email'],"name":all_user_data['name'],
-                        "batch":all_user_data['batch'],
+                        #"batch":all_user_data['batch'],
                         "userId": all_user_data['userId'], 
                         "role":all_user_data['role'],
-                        "batchId": all_user_data['batchId']}
+                        "batchId": all_user_data['batchId'],
+                        "groups": all_user_data['groups']
+                        }
         result_json = sg.Select_from_table(query=query, variables= variables)
         return result_json
     def read_all_users(self,sg, req_params):
@@ -266,8 +280,8 @@ class CommunicationManager:
             }
             }
         }"""
-        print("row ......", row)    
-        print("rows ......", row['date_of_birth'])
+        print("profile row ......", row)    
+     
       
         result_json = sg.Select_from_table(query=query, variables= { "firstName": row['first_name'],
                                                                         "surName": row['last_name'],

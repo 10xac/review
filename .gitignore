@@ -4,4 +4,6 @@ __pycache__/
 tobedeleted
 *.csv
 .env/
-.review/
+# add venv to the ignore list
+review/
+
