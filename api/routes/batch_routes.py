@@ -1,19 +1,20 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File, status, BackgroundTasks
+from fastapi import APIRouter, HTTPException, UploadFile, File, status, BackgroundTasks, Depends
 from typing import Optional, Dict
 import json
 import traceback
 import re
 
+from api.core.auth import verify_admin_access
 from api.models.trainee import BatchConfig, BatchTraineeCreate, BatchProcessingResponse
 from api.services.batch_service import BatchService
 
 router = APIRouter(prefix="/trainee", tags=["trainee"])
 
 @router.post("/batch", response_model=BatchProcessingResponse)
-async def process_batch(
+async def process_batch( 
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
-    run_stage: str = "prod",
+    run_stage: str = "dev",
     batch: int = None,
     role: str = "trainee",
     group_id: Optional[str] = None,
@@ -21,10 +22,9 @@ async def process_batch(
     encoding: str = "utf-8",
     chunk_size: int = 20,
     callback_url: Optional[str] = None,
-    webhook_secret: Optional[str] = None,
-    webhook_headers: Optional[str] = None,
     webhook_retry_count: Optional[int] = 3,
-    webhook_retry_delay: Optional[int] = 5
+    webhook_retry_delay: Optional[int] = 5,
+    current_user: Dict = Depends(verify_admin_access)
 ):
     """
     Process a batch of trainees from a CSV file
@@ -43,12 +43,15 @@ async def process_batch(
     - status
     - other_info
     """
+    
     try:
         # Validate file
         if not file.filename:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No file provided"
+            return BatchProcessingResponse.error_response(
+                error_type="VALIDATION_ERROR",
+                error_message="No file provided",
+                error_location="file_validation",
+                error_data={"filename": file.filename}
             )
             
         # Validate batch
@@ -58,39 +61,12 @@ async def process_batch(
                 detail="batch parameter is required"
             )
 
-        # Validate run_stage
-        if not run_stage:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="run_stage parameter is required"
-            )
-
         # Validate callback_url if provided
         if callback_url:
             if not re.match(r'^https?://', callback_url):
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="callback_url must be a valid HTTP(S) URL"
-                )
-
-        # Validate webhook_secret if provided
-        if webhook_secret and not isinstance(webhook_secret, str):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="webhook_secret must be a string"
-            )
-
-        # Parse webhook_headers if provided
-        parsed_webhook_headers = None
-        if webhook_headers:
-            try:
-                parsed_webhook_headers = json.loads(webhook_headers)
-                if not isinstance(parsed_webhook_headers, dict):
-                    raise ValueError("webhook_headers must be a JSON object")
-            except json.JSONDecodeError:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Invalid webhook_headers format. Must be a valid JSON string."
                 )
 
         # Validate retry parameters
@@ -105,7 +81,7 @@ async def process_batch(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="webhook_retry_delay must be between 1 and 60 seconds"
             )
-        
+
         try:
             # Create config
             config = BatchConfig(
@@ -117,8 +93,6 @@ async def process_batch(
                 encoding=encoding,
                 chunk_size=chunk_size,
                 callback_url=callback_url,
-                webhook_secret=webhook_secret,
-                webhook_headers=parsed_webhook_headers,
                 webhook_retry_count=webhook_retry_count,
                 webhook_retry_delay=webhook_retry_delay
             )

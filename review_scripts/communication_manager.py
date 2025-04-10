@@ -451,31 +451,31 @@ class CommunicationManager:
     
     def get_user_with_out_alluser( self, sg, role):
         query = """query getAllTrainees($role:String){
-  usersPermissionsUsers(filters:{
-    all_users:{id:{eq:null}}
-    role:{name:{eq:$role}}}
-  pagination:{start:0,limit:2000}){
-    meta{
-      pagination{
-        total
-      }
-    }
-    data{
-      id
-      attributes{
-        email
-        username
-        all_users{
-          data{
-            attributes{
-              name
-            }
-          }
-        }
-      }
-    }
-  }
-}"""
+                    usersPermissionsUsers(filters:{
+                        all_users:{id:{eq:null}}
+                        role:{name:{eq:$role}}}
+                    pagination:{start:0,limit:2000}){
+                        meta{
+                        pagination{
+                            total
+                        }
+                        }
+                        data{
+                        id
+                        attributes{
+                            email
+                            username
+                            all_users{
+                            data{
+                                attributes{
+                                name
+                                }
+                            }
+                            }
+                        }
+                        }
+                    }
+                    }"""
         result_json = sg.Select_from_table(query=query,variables =  {"role":role})
         return result_json
 
@@ -534,3 +534,20 @@ class CommunicationManager:
         """
         variables = {"id": trainee_id}
         return sg.Select_from_table(query, variables)
+    
+    
+    def request_auth_query(self):
+        auth_query = """
+                    query {
+                        me {
+                        id
+                username
+                email
+                role {
+                name
+                }
+            }
+            }
+            """
+        return auth_query
+

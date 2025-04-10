@@ -1,7 +1,7 @@
 from pydantic_settings import BaseSettings
 from functools import lru_cache
 from typing import Optional
-
+import os
 class Settings(BaseSettings):
     """Application settings"""
     APP_NAME: str = "10 Academy Trainee API"
@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     BACKEND_CORS_ORIGINS: list[str] = ["*"]
     
     # Default values
-    DEFAULT_RUN_STAGE: str = "prod"
+    RUN_STAGE: str = "dev"
     DEFAULT_ROLE: str = "trainee"
     DEFAULT_BATCH_SIZE: int = 20
     
@@ -25,14 +25,51 @@ class Settings(BaseSettings):
     REQUIRED_COLUMNS: list[str] = [
         "name",
         "email",
-        "nationality",
-        "gender",
-        "date_of_birth"
+    
     ]
     
     class Config:
         case_sensitive = True
         env_file = ".env"
+
+
+
+strapi_stage =  os.environ.get('STRAPI_STAGE','unknown')
+print(f'using STRAPI_STAGE={strapi_stage}')
+
+def get_strapi_params(stage):
+    if stage.lower().startswith('devapply'):
+        root='dev-apply-cms'
+        ssmkey="APPLY_DEV_STRAPI_TOKEN"
+    elif stage.lower().startswith('apply'):
+        root='apply-cms'
+        ssmkey="APPLY_PROD_STRAPI_TOKEN" 
+    elif stage.lower().startswith('devu2j'):
+        root='dev-u2jcms'#'dev-u2j-cms'
+        ssmkey="U2J_DEV_STRAPI_TOKEN" 
+    elif stage.lower().startswith('u2j'):
+        root='u2jcms'
+        ssmkey="U2J_PROD_STRAPI_TOKEN"
+    elif stage.lower().startswith('kaim'):
+        root='kaimcms'
+        ssmkey="KAIM_PROD_STRAPI_TOKEN"
+    elif stage.lower().startswith('kepler'):
+        root='keplercms'
+        ssmkey="KEPLER_PROD_STRAPI_TOKEN" 
+
+    elif stage.lower().startswith('prod'):
+        root='cms'
+        ssmkey="TENX_PROD_STRAPI_TOKEN" 
+    elif stage.lower().startswith('tenacious'):
+        root='tenaciouscms'
+        ssmkey="TENACIOUS_PROD_STRAPI_TOKEN"
+    else:  
+        root='dev-cms'
+        ssmkey="TENX_DEV_STRAPI_TOKEN"  
+
+    return root, ssmkey   
+    
+root, ssmkey = get_strapi_params(strapi_stage)
 
 @lru_cache()
 def get_settings() -> Settings:

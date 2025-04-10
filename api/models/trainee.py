@@ -250,8 +250,7 @@ class BatchProcessingResponse(BaseModel):
         return response.to_dict()
 
     @classmethod
-    def error_response(cls, error_type: str, error_message: str, error_location: str, 
-                      error_data: Dict[str, Any] = None, batch_info: Dict[str, Any] = None) -> Dict[str, Any]:
+    def error_response(cls, error_type: str, error_message: str, error_location: str, error_data: Dict[str, Any] = None, batch_info: Dict[str, Any] = None) -> Dict[str, Any]:
         response = cls(
             success=False,
             message="Error occurred during batch processing",
