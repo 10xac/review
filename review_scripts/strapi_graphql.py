@@ -15,21 +15,23 @@ if not cpath in sys.path:
     sys.path.append(cpath)
 
 from utils.secret import get_auth, lambda_friendly_path
-
-
-import utils.config as config
+from api.core.config import get_strapi_params, strapi_stage
+# import utils.config as config
 
 class StrapiGraphql():
     def __init__(self, **kwargs):
 
-        run_stage =  kwargs.get('run_stage',config.strapi.stage)
+        run_stage =  kwargs.get('run_stage',strapi_stage)
         
         print('StrapiGraphql run_stage:', run_stage)
-        root, ssmkey = config.get_strapi_params(run_stage)
+        root, ssmkey = get_strapi_params(run_stage)
            
+        if run_stage.lower().startswith('tenacious'):
+            self.apiroot = f"https://cms.gettenacious.com/graphql" 
+        else:
+            self.apiroot = f"https://{root}.10academy.org/graphql"
 
 
-        self.apiroot = f"https://{root}.10academy.org/graphql" 
         self.ssmkey = ssmkey
         
         self.token = get_auth(ssmkey,

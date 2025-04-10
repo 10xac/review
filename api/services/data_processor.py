@@ -2,6 +2,7 @@ import pandas as pd
 from fastapi import HTTPException
 from typing import Dict, Union
 from utils.gdrive import gsheet
+from api.models.trainee import TraineeResponse
 
 class DataProcessor:
     def __init__(self, config: Dict):
@@ -37,80 +38,85 @@ class DataProcessor:
         Returns:
             Dict: Processed trainee data
         """
-        processed_data = {}
-        
-        # Process name
-        name = getattr(trainee_data, 'name', '')
-        if name:
-            name = name.strip().title()
-            name = name.replace('-', '').replace('.', '').replace('  ', ' ')
-        processed_data['name'] = name
+        try:
+            processed_data = {}
+            
+            # Process name
+            name = getattr(trainee_data, 'name', '')
+            if name:
+                name = name.strip().title()
+                name = name.replace('-', '').replace('.', '').replace('  ', ' ')
+            processed_data['name'] = name
 
-        # Process email
-        email = getattr(trainee_data, 'email', '')
-        if email:
-            email = email.strip().lower()
-        processed_data['email'] = email
-        
-        processed_data['password'] = getattr(trainee_data, 'password', '')
-        if processed_data['password'] is None or processed_data['password'] == "":
-            processed_data['password'] = processed_data['email']
+            # Process email
+            email = getattr(trainee_data, 'email', '')
+            if email:
+                email = email.strip().lower()
+            processed_data['email'] = email
+            
+            processed_data['password'] = getattr(trainee_data, 'password', '')
+            if processed_data['password'] is None or processed_data['password'] == "":
+                processed_data['password'] = processed_data['email']
 
-        # Process other fields
-        processed_data['nationality'] = getattr(trainee_data, 'nationality', '')
-        processed_data['gender'] = getattr(trainee_data, 'gender', '')
-        
-        # Handle date_of_birth carefully
-        date_of_birth = getattr(trainee_data, 'date_of_birth', None)
-        if date_of_birth:
-            if isinstance(date_of_birth, str):
-                try:
-                    # Try to parse the date string
-                    from datetime import datetime
-                    parsed_date = datetime.strptime(date_of_birth, '%Y-%m-%d')
-                    processed_data['date_of_birth'] = parsed_date.strftime('%Y-%m-%d')
-                except ValueError:
+            # Process other fields
+            processed_data['nationality'] = getattr(trainee_data, 'nationality', '')
+            processed_data['gender'] = getattr(trainee_data, 'gender', '')
+            
+            # Handle date_of_birth carefully
+            date_of_birth = getattr(trainee_data, 'date_of_birth', None)
+            if date_of_birth:
+                if isinstance(date_of_birth, str):
+                    try:
+                        from datetime import datetime
+                        parsed_date = datetime.strptime(date_of_birth, '%Y-%m-%d')
+                        processed_data['date_of_birth'] = parsed_date.strftime('%Y-%m-%d')
+                    except ValueError:
+                        processed_data['date_of_birth'] = None
+                elif hasattr(date_of_birth, 'strftime'):
+                    processed_data['date_of_birth'] = date_of_birth.strftime('%Y-%m-%d')
+                else:
                     processed_data['date_of_birth'] = None
-            elif hasattr(date_of_birth, 'strftime'):
-                processed_data['date_of_birth'] = date_of_birth.strftime('%Y-%m-%d')
             else:
                 processed_data['date_of_birth'] = None
-        else:
-            processed_data['date_of_birth'] = None
 
-        processed_data['vulnerable'] = getattr(trainee_data, 'vulnerable', '')
-        processed_data['status'] = getattr(trainee_data, 'status', 'Accepted')
-        
-        if processed_data['status'] is None or processed_data['status'] == "":
-            processed_data['status'] = 'Accepted'
+            processed_data['vulnerable'] = getattr(trainee_data, 'vulnerable', '')
+            processed_data['status'] = getattr(trainee_data, 'status', 'Accepted')
+            
+            if processed_data['status'] is None or processed_data['status'] == "":
+                processed_data['status'] = 'Accepted'
 
-        # Add config information
-        processed_data['role'] = self.config.role
-        if processed_data['role'] is None or processed_data['role'] == "":
-            processed_data['role'] = 'trainee'
+            # Add config information
+            processed_data['role'] = self.config.role
+            if processed_data['role'] is None or processed_data['role'] == "":
+                processed_data['role'] = 'trainee'
 
-        # Handle batch_id
-        if self.config.batch is None or self.config.batch == "":
-            processed_data['batch_id'] = []
-        else:
-            processed_data['batch_id'] = self.config.batch 
+            # Handle batch_id
+            if self.config.batch is None or self.config.batch == "":
+                processed_data['batch_id'] = []
+            else:
+                processed_data['batch_id'] = [self.config.batch]
 
-        # Handle groups
-        if self.config.group_id is None or self.config.group_id == "":
-            processed_data['groups'] = []
-        else:
-            processed_data['groups'] = [self.config.group_id]
+            # Handle groups
+            if self.config.group_id is None or self.config.group_id == "":
+                processed_data['groups'] = []
+            else:
+                processed_data['groups'] = [self.config.group_id]
 
-        # Validate required fields
-        required_fields = ['name', 'email']
-        missing_fields = [field for field in required_fields if not processed_data.get(field)]
-        if missing_fields:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Missing required fields: {', '.join(missing_fields)}"
+            # Validate required fields
+            required_fields = ['name', 'email']
+            missing_fields = [field for field in required_fields if not processed_data.get(field)]
+            if missing_fields:
+                raise ValueError(f"Missing required fields: {', '.join(missing_fields)}")
+
+            return processed_data
+            
+        except Exception as e:
+            return TraineeResponse.error_response(
+                error_type="DATA_PROCESSING_ERROR",
+                error_message=str(e),
+                error_location="trainee_data_processing",
+                error_data={"input_data": trainee_data}
             )
-
-        return processed_data
 
     @staticmethod
     def change_name_fullname(row: pd.Series) -> str:
