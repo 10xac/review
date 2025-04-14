@@ -1,19 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
+from fastapi import APIRouter, Depends, UploadFile, File
 from typing import Optional, Dict
 from fastapi import BackgroundTasks
-import httpx
-import json
-import pandas as pd
-import io
-import traceback
-import os
-
-from fastapi import FastAPI, Request, Header
-import hmac
-import hashlib
-import json
-
-app = FastAPI()
 
 from api.controllers.trainee_controller import TraineeController
 from api.models.trainee import (
@@ -23,16 +10,15 @@ from api.models.trainee import (
     BatchConfig,
     BatchProcessingResponse
 )
-from api.services.trainee_service import TraineeService
-
-
+from api.core.auth import get_current_user
 
 router = APIRouter(prefix="/trainee", tags=["trainee"])
 
 @router.post("/single", response_model=TraineeResponse)
 async def create_trainee_route(
     trainee: TraineeCreate,
-    controller: TraineeController = Depends()
+    controller: TraineeController = Depends(),
+    # current_user: Dict = Depends(get_current_user)
 ):
     """
     Create a new trainee with all related information
@@ -57,5 +43,16 @@ async def create_trainee_route(
         }
     }
     """
+    # print("Trainee data:", trainee)
+    # print("Current user:", current_user)
+    # # Verify admin access after getting the trainee data
+    # if current_user.get("role") not in ["Authenticated", "Staff"]:
+    #     return TraineeResponse.error_response(
+    #         error_type="AUTH_ERROR",
+    #         error_message="Insufficient permissions. Admin access required.",
+    #         error_location="trainee_creation",
+    #         error_data={"user_role": current_user.get("role")}
+    #     )
+    
     return await controller.create_trainee_controller(trainee)
 

@@ -4,7 +4,7 @@ from datetime import datetime
 import hmac
 import hashlib
 import json
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 import logging
 import pandas as pd
 import math

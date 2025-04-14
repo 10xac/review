@@ -1,30 +1,28 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File, status, BackgroundTasks
+from fastapi import APIRouter, HTTPException, UploadFile, File, status, BackgroundTasks, Depends
 from typing import Optional, Dict
 import json
 import traceback
 import re
 
+from api.core.auth import verify_admin_access
 from api.models.trainee import BatchConfig, BatchTraineeCreate, BatchProcessingResponse
 from api.services.batch_service import BatchService
 
 router = APIRouter(prefix="/trainee", tags=["trainee"])
 
 @router.post("/batch", response_model=BatchProcessingResponse)
-async def process_batch(
+async def process_batch( 
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
-    run_stage: str = "prod",
+    run_stage: str = "dev",
     batch: int = None,
     role: str = "trainee",
     group_id: Optional[str] = None,
     delimiter: str = ",",
     encoding: str = "utf-8",
     chunk_size: int = 20,
-    callback_url: Optional[str] = None,
-    webhook_secret: Optional[str] = None,
-    webhook_headers: Optional[str] = None,
-    webhook_retry_count: Optional[int] = 3,
-    webhook_retry_delay: Optional[int] = 5
+    login_url: str = "https://tenxdev.com/login",  # Default login URL
+    current_user: Dict = Depends(verify_admin_access)
 ):
     """
     Process a batch of trainees from a CSV file
@@ -43,12 +41,22 @@ async def process_batch(
     - status
     - other_info
     """
+    
     try:
+        if isinstance(current_user, dict) and "success" in current_user and not current_user["success"]:
+            return BatchProcessingResponse.error_response(
+                error_type=current_user["error"]["error_type"],
+                error_message=current_user["error"]["error_message"],
+                error_location=current_user["error"]["error_location"],
+                error_data=current_user["error"]["error_data"]
+            )
         # Validate file
         if not file.filename:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No file provided"
+            return BatchProcessingResponse.error_response(
+                error_type="VALIDATION_ERROR",
+                error_message="No file provided",
+                error_location="file_validation",
+                error_data={"filename": file.filename}
             )
             
         # Validate batch
@@ -58,54 +66,24 @@ async def process_batch(
                 detail="batch parameter is required"
             )
 
-        # Validate run_stage
-        if not run_stage:
+        # Validate login_url
+        if not re.match(r'^https?://', login_url):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="run_stage parameter is required"
+                detail="login_url must be a valid HTTP(S) URL"
             )
 
-        # Validate callback_url if provided
-        if callback_url:
-            if not re.match(r'^https?://', callback_url):
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="callback_url must be a valid HTTP(S) URL"
-                )
+        # Use authenticated user's email as admin_email
+        admin_email = current_user["email"]
+        print(f"Using authenticated user's email as admin email: {admin_email}")
 
-        # Validate webhook_secret if provided
-        if webhook_secret and not isinstance(webhook_secret, str):
+        # Validate admin_email
+        if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', admin_email):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="webhook_secret must be a string"
+                detail="Invalid admin email format"
             )
 
-        # Parse webhook_headers if provided
-        parsed_webhook_headers = None
-        if webhook_headers:
-            try:
-                parsed_webhook_headers = json.loads(webhook_headers)
-                if not isinstance(parsed_webhook_headers, dict):
-                    raise ValueError("webhook_headers must be a JSON object")
-            except json.JSONDecodeError:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Invalid webhook_headers format. Must be a valid JSON string."
-                )
-
-        # Validate retry parameters
-        if webhook_retry_count is not None and (webhook_retry_count < 1 or webhook_retry_count > 10):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="webhook_retry_count must be between 1 and 10"
-            )
-
-        if webhook_retry_delay is not None and (webhook_retry_delay < 1 or webhook_retry_delay > 60):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="webhook_retry_delay must be between 1 and 60 seconds"
-            )
-        
         try:
             # Create config
             config = BatchConfig(
@@ -116,11 +94,8 @@ async def process_batch(
                 delimiter=delimiter,
                 encoding=encoding,
                 chunk_size=chunk_size,
-                callback_url=callback_url,
-                webhook_secret=webhook_secret,
-                webhook_headers=parsed_webhook_headers,
-                webhook_retry_count=webhook_retry_count,
-                webhook_retry_delay=webhook_retry_delay
+                login_url=login_url,
+                admin_email=admin_email
             )
         except Exception as config_error:
             raise HTTPException(
@@ -157,17 +132,26 @@ async def process_batch(
         async def process_batch_background(service: BatchService):
             try:
                 results = await service.process_batch_trainees()
-                if callback_url and service.webhook_service:
-                    await service.webhook_service.notify_callback(results)
-            except Exception as e:
-                print(f"Background task failed: {str(e)}")
-                if callback_url and service.webhook_service:
-                    error_results = {
-                        "status": "failed",
-                        "error": str(e),
-                        "batch": batch
+                # Log the results
+                service.logger.info(
+                    "Batch processing completed",
+                    extra={
+                        'batch_id': batch,
+                        'total_processed': results.get('total_processed', 0),
+                        'successful': results.get('successful', 0),
+                        'failed': results.get('failed', 0),
+                        'status': results.get('status', 'unknown')
                     }
-                    await service.webhook_service.notify_callback(error_results)
+                )
+            except Exception as e:
+                service.logger.error(
+                    "Batch processing failed",
+                    extra={
+                        'batch_id': batch,
+                        'error': str(e),
+                        'traceback': traceback.format_exc()
+                    }
+                )
         
         # Create service instance
         batch_service = BatchService(batch_create)
@@ -178,7 +162,7 @@ async def process_batch(
         return BatchProcessingResponse.success_response(
             message="Batch processing started",
             data={"status": "processing", "batch": batch},
-            batch_info={"batch": batch, "callback_url": callback_url}
+            batch_info={"batch": batch, "admin_email": admin_email}
         )
         
     except HTTPException as http_error:
