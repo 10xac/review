@@ -6,9 +6,10 @@ app = FastAPI(title="10 Academy User API")
 
 # CORS Settings
 ALLOWED_ORIGINS: List[str] = [
-    "http://0.0.0.0:8009",  
-    "http://0.0.0.0:8008",  
-    "https://user-management.10academy.org",  
+    # "http://0.0.0.0:8009",  
+    # "http://0.0.0.0:8008",  
+    "https://*.gettenacious.com", 
+    "https://*.10academy.org"
 ]
     
 # Configure CORS
