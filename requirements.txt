@@ -3,15 +3,12 @@ botocore==1.20.67
 
 oauth2client==4.1.3
 boto3==1.17.67
-
 gspread==3.7.0
 plotly
 protobuf==3.17.3
 psycopg2-binary
 requests
 sqlalchemy
-
 gspread
 oauth2client
-
 google-api-python-client
