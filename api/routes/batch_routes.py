@@ -21,9 +21,7 @@ async def process_batch(
     delimiter: str = ",",
     encoding: str = "utf-8",
     chunk_size: int = 20,
-    callback_url: Optional[str] = None,
-    webhook_retry_count: Optional[int] = 3,
-    webhook_retry_delay: Optional[int] = 5,
+    login_url: str = "https://tenxdev.com/login",  # Default login URL
     current_user: Dict = Depends(verify_admin_access)
 ):
     """
@@ -45,6 +43,13 @@ async def process_batch(
     """
     
     try:
+        if isinstance(current_user, dict) and "success" in current_user and not current_user["success"]:
+            return BatchProcessingResponse.error_response(
+                error_type=current_user["error"]["error_type"],
+                error_message=current_user["error"]["error_message"],
+                error_location=current_user["error"]["error_location"],
+                error_data=current_user["error"]["error_data"]
+            )
         # Validate file
         if not file.filename:
             return BatchProcessingResponse.error_response(
@@ -61,25 +66,22 @@ async def process_batch(
                 detail="batch parameter is required"
             )
 
-        # Validate callback_url if provided
-        if callback_url:
-            if not re.match(r'^https?://', callback_url):
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="callback_url must be a valid HTTP(S) URL"
-                )
-
-        # Validate retry parameters
-        if webhook_retry_count is not None and (webhook_retry_count < 1 or webhook_retry_count > 10):
+        # Validate login_url
+        if not re.match(r'^https?://', login_url):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="webhook_retry_count must be between 1 and 10"
+                detail="login_url must be a valid HTTP(S) URL"
             )
 
-        if webhook_retry_delay is not None and (webhook_retry_delay < 1 or webhook_retry_delay > 60):
+        # Use authenticated user's email as admin_email
+        admin_email = current_user["email"]
+        print(f"Using authenticated user's email as admin email: {admin_email}")
+
+        # Validate admin_email
+        if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', admin_email):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="webhook_retry_delay must be between 1 and 60 seconds"
+                detail="Invalid admin email format"
             )
 
         try:
@@ -92,9 +94,8 @@ async def process_batch(
                 delimiter=delimiter,
                 encoding=encoding,
                 chunk_size=chunk_size,
-                callback_url=callback_url,
-                webhook_retry_count=webhook_retry_count,
-                webhook_retry_delay=webhook_retry_delay
+                login_url=login_url,
+                admin_email=admin_email
             )
         except Exception as config_error:
             raise HTTPException(
@@ -131,17 +132,26 @@ async def process_batch(
         async def process_batch_background(service: BatchService):
             try:
                 results = await service.process_batch_trainees()
-                if callback_url and service.webhook_service:
-                    await service.webhook_service.notify_callback(results)
-            except Exception as e:
-                print(f"Background task failed: {str(e)}")
-                if callback_url and service.webhook_service:
-                    error_results = {
-                        "status": "failed",
-                        "error": str(e),
-                        "batch": batch
+                # Log the results
+                service.logger.info(
+                    "Batch processing completed",
+                    extra={
+                        'batch_id': batch,
+                        'total_processed': results.get('total_processed', 0),
+                        'successful': results.get('successful', 0),
+                        'failed': results.get('failed', 0),
+                        'status': results.get('status', 'unknown')
                     }
-                    await service.webhook_service.notify_callback(error_results)
+                )
+            except Exception as e:
+                service.logger.error(
+                    "Batch processing failed",
+                    extra={
+                        'batch_id': batch,
+                        'error': str(e),
+                        'traceback': traceback.format_exc()
+                    }
+                )
         
         # Create service instance
         batch_service = BatchService(batch_create)
@@ -152,7 +162,7 @@ async def process_batch(
         return BatchProcessingResponse.success_response(
             message="Batch processing started",
             data={"status": "processing", "batch": batch},
-            batch_info={"batch": batch, "callback_url": callback_url}
+            batch_info={"batch": batch, "admin_email": admin_email}
         )
         
     except HTTPException as http_error:

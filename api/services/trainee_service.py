@@ -17,8 +17,7 @@ class TraineeService:
         self.sm = StrapiMethods(run_stage=self.config.run_stage)
         self.cm = CommunicationManager()
         self.data_processor = DataProcessor(self.config)
-        print(self.sm.apiroot)
-        print(self.sg.apiroot)
+    
         
         # Track created resources for cleanup in case of failure
         self.created_resources = {
@@ -54,13 +53,24 @@ class TraineeService:
 
     def _insert_user_and_alluser(self, user_data: Dict) -> Union[Tuple[str, str], Dict[str, Any]]:
         """Insert user into both users and allusers tables"""
+        
         try:
-            # Create user
+            #create user first 
             result_json = self.cm.create_user(self.sg, user_data)
             user_id = result_json['data']['register']['user']['id']
             self.created_resources['user_id'] = user_id
-         
-            # Create alluser
+        except Exception as e:
+            self._cleanup_resources('user')
+            return TraineeResponse.error_response(
+                error_type="USER_CREATION_ERROR",
+                error_message="Duplicate email address",
+                error_location="user_creation",
+                error_data=user_data
+            )
+        
+        try:
+            # Create alluser 
+          
             alluser_data = {
                 "name": user_data["name"],
                 "email": user_data["email"],
@@ -118,7 +128,9 @@ class TraineeService:
     def create_trainee_services(self) -> Dict[str, Any]:
         """Create a new trainee with all related information"""
         try:
+            
             # Process trainee data
+            print("trainee data ", self.trainee_data)
             processed_data = self.data_processor.process_single_trainee(self.trainee_data)
 
             # Split name into first and last name
@@ -152,7 +164,7 @@ class TraineeService:
                 "date_of_birth": processed_data['date_of_birth'],
                 "all_user": alluser_id,
                 "other_info": {
-                    **processed_data.get('other_info', {}),
+                    **{k: v for k, v in processed_data.get('other_info', {}).items() if k != 'password'},
                     "vulnerable": processed_data.get('vulnerable', '')
                 },
                 "bio": processed_data.get('bio', ''),

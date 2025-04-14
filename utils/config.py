@@ -185,22 +185,6 @@ class PGDB:
       
     
 
-def get_score_function(sid):
-    '''
-    Example of loading modules dynamically - by copying from EFS or from S3
-    '''
-    fpath = folders.scorecards.format(sid=sid)
-    mname = "scorecard_preprocessing"
-    src = f'{fpath}/{mname}.py'
-    if not os.path.exists(src):
-        src = f"api.InferencePreprocessing/{mname}.py"
-
-    print(f'--Importing {src}...')    
-    spec = importlib.util.spec_from_file_location(mname, src)
-    mod = importlib.util.module_from_spec(spec)
-    sys.modules["module.name"] = mod
-    spec.loader.exec_module(mod)
-    return mod.calculate_credit_score
 
 
     

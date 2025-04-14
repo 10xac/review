@@ -173,13 +173,15 @@ class BatchConfig(BaseModel):
     delimiter: str = ","
     encoding: str = "utf-8"
     chunk_size: int = 20
-    callback_url: Optional[str] = None
-    webhook_secret: Optional[str] = None  # Secret key for webhook authentication
-    webhook_headers: Optional[Dict[str, str]] = None  # Custom headers for webhook
-    webhook_retry_count: int = 3  # Number of retry attempts for failed webhooks
-    webhook_retry_delay: int = 5  # Delay between retries in seconds
+    login_url: str = "https://tenxdev.com/login"  # Default login URL for trainee welcome emails
+    admin_email: Optional[str] = None  # Email address for admin notifications
+    callback_url: Optional[str] = None  # URL for webhook callbacks
+    webhook_secret: Optional[str] = None  # Secret for webhook signatures
+    webhook_headers: Optional[Dict[str, str]] = None  # Additional headers for webhook
+    webhook_retry_count: Optional[int] = 3  # Number of times to retry failed webhook calls
+    webhook_retry_delay: Optional[int] = 5  # Delay in seconds between retries
     required_columns: list[str] = [
-        "name", "email"#,  "nationality", "gender", "date_of_birth"
+        "name", "email"
     ]
 
 class BatchTraineeCreate(BaseModel):
@@ -210,7 +212,9 @@ class BatchProcessingResponse(BaseModel):
     total_processed: Optional[int] = 0
     successful: Optional[int] = 0
     failed: Optional[int] = 0
-    errors: Optional[List[Dict[str, Any]]] = None
+    failed_trainees: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
+    successful_trainees: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
+    error_details: Optional[List[Dict[str, str]]] = Field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:
         response_dict = {
@@ -230,8 +234,14 @@ class BatchProcessingResponse(BaseModel):
         if self.batch_info:
             response_dict["batch_info"] = self.batch_info
             
-        if self.errors:
-            response_dict["errors"] = self.errors
+        if self.failed_trainees:
+            response_dict["failed_trainees"] = self.failed_trainees
+            
+        if self.successful_trainees:
+            response_dict["successful_trainees"] = self.successful_trainees
+            
+        if self.error_details:
+            response_dict["error_details"] = self.error_details
             
         return response_dict
 
@@ -242,10 +252,12 @@ class BatchProcessingResponse(BaseModel):
             message=message,
             data=data,
             batch_info=batch_info,
-            total_processed=data.get("total", 0) if data else 0,
+            total_processed=data.get("total_processed", 0) if data else 0,
             successful=data.get("successful", 0) if data else 0,
             failed=data.get("failed", 0) if data else 0,
-            errors=data.get("errors", []) if data else []
+            failed_trainees=data.get("failed_trainees", []) if data else [],
+            successful_trainees=data.get("successful_trainees", []) if data else [],
+            error_details=data.get("error_details", []) if data else []
         )
         return response.to_dict()
 
@@ -260,6 +272,12 @@ class BatchProcessingResponse(BaseModel):
                 error_location=error_location,
                 error_data=error_data
             ),
-            batch_info=batch_info
+            batch_info=batch_info,
+            failed_trainees=[{
+                'error_type': error_type,
+                'error_message': error_message,
+                'error_location': error_location,
+                'trainee_data': error_data
+            }] if error_data else []
         )
         return response.to_dict() 

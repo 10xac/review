@@ -3,6 +3,7 @@ from fastapi import HTTPException
 from typing import Dict, Union
 from utils.gdrive import gsheet
 from api.models.trainee import TraineeResponse
+from api.utils.password_generator import generate_secure_password
 
 class DataProcessor:
     def __init__(self, config: Dict):
@@ -53,11 +54,11 @@ class DataProcessor:
             if email:
                 email = email.strip().lower()
             processed_data['email'] = email
-            
+           
             processed_data['password'] = getattr(trainee_data, 'password', '')
             if processed_data['password'] is None or processed_data['password'] == "":
                 processed_data['password'] = processed_data['email']
-
+          
             # Process other fields
             processed_data['nationality'] = getattr(trainee_data, 'nationality', '')
             processed_data['gender'] = getattr(trainee_data, 'gender', '')
