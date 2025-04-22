@@ -5,10 +5,11 @@ import httpx
 
 from review_scripts.communication_manager import CommunicationManager
 from review_scripts.strapi_graphql import StrapiGraphql
+from api.core.logging_config import setup_logging
 from api.core.config import Settings
 from api.models.trainee import TraineeResponse
 
-
+logger = setup_logging()
 security = HTTPBearer()
 
 async def get_current_user(
@@ -24,7 +25,7 @@ async def get_current_user(
         credentials: The JWT token credentials
     """
     token = credentials.credentials
-    print("token", token)
+
     
     # Get run_stage from request body
     try:
@@ -35,7 +36,8 @@ async def get_current_user(
     
     sg = StrapiGraphql(run_stage=run_stage)
     strapi_url = sg.apiroot
-    print("strapi_url", strapi_url)
+    logger.info("Used Strapi URL.....: %s", strapi_url)
+
 
     headers = {
         "Authorization": f"Bearer {token}",
@@ -47,9 +49,6 @@ async def get_current_user(
     try:
         async with httpx.AsyncClient() as client:
             response = await client.post(strapi_url, headers=headers, json={"query": auth_query})
-            print("Response status:", response.status_code)
-            print("Response text:", response.text)
-     
             if response.status_code == 200:
                 auth_data = response.json()
                 print("Authentication response:", auth_data)

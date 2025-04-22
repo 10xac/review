@@ -10,7 +10,7 @@ from api.models.trainee import (
     BatchConfig,
     BatchProcessingResponse
 )
-from api.core.auth import get_current_user
+from api.core.auth import get_current_user, verify_admin_access
 
 router = APIRouter(prefix="/trainee", tags=["trainee"])
 
@@ -55,4 +55,39 @@ async def create_trainee_route(
     #     )
     
     return await controller.create_trainee_controller(trainee)
+
+@router.post("/admin-single", response_model=TraineeResponse)
+async def create_admin_trainee_route(
+    trainee: TraineeCreate,
+    background_tasks: BackgroundTasks,
+    controller: TraineeController = Depends(),
+    current_user: Dict = Depends(verify_admin_access)
+):
+    """
+    Create a new trainee as an admin with additional features:
+    1. Create mock user (when is_mock=True in config)
+    2. Create real user and send welcome email (when is_mock=False in config)
+    
+    The request should include both trainee information and configuration details.
+    Example:
+    {
+        "config": {
+            "run_stage": "prod",
+            "batch": 5,
+            "role": "trainee",
+            "group_id": "12",
+            "is_mock": false
+        },
+        "trainee": {
+            "name": "John Doe",
+            "email": "john.doe@example.com",
+            "password": "password",
+            "nationality": "Kenya",
+            "gender": "Male",
+            "date_of_birth": "1995-01-01",
+            "vulnerable": "No"
+        }
+    }
+    """
+    return await controller.create_admin_trainee_controller(trainee, background_tasks)
 

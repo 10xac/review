@@ -5,7 +5,7 @@ import os
 class Settings(BaseSettings):
     """Application settings"""
     APP_NAME: str = "10 Academy Trainee API"
-    API_V1_STR: str = "/api/v1"
+    # API_V1_STR: str = "/api/v1"
     
     # CORS settings
     BACKEND_CORS_ORIGINS: list[str] = ["*"]
@@ -35,7 +35,7 @@ class Settings(BaseSettings):
 
 
 strapi_stage =  os.environ.get('STRAPI_STAGE','unknown')
-print(f'using STRAPI_STAGE={strapi_stage}')
+print(f'Using STRAPI_STAGE={strapi_stage}')
 
 def get_strapi_params(stage):
     if stage.lower().startswith('devapply'):

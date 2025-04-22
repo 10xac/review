@@ -77,10 +77,10 @@ class TraineeService:
                     error_location="user_creation",
                     error_data={"missing_fields": missing_fields}
                 )
-
+            request_link = self.sm.apiroot + "/api/auth/local/register"
             # Make the request to create user
             response = requests.post(
-                "https://dev-cms.10academy.org/api/auth/local/register",
+                request_link,
                 json=user_var,
                 headers={"Content-Type": "application/json"}
             )

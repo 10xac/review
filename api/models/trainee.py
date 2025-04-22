@@ -12,6 +12,7 @@ class ConfigInfo(BaseModel):
     group_id: Optional[str] = ""
     sheet_id: Optional[str] = None
     sheet_name: Optional[str] = None
+    login_url: Optional[str] = None  # Optional login URL for trainee welcome emails
 
 class TraineeInfo(BaseModel):
     name: str
@@ -185,6 +186,8 @@ class BatchConfig(BaseModel):
     required_columns: list[str] = [
         "name", "email"
     ]
+    password_option: str = "default"  # Options: "default", "provided", "auto"
+    default_password: Optional[str] = "10@Academy"  # Used when password_option is "default"
 
 class BatchTraineeCreate(BaseModel):
     config: BatchConfig
