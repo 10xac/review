@@ -21,6 +21,7 @@ async def process_batch(
     delimiter: str = ",",
     encoding: str = "utf-8",
     chunk_size: int = 20,
+    is_mock: bool = False,
     login_url: str = "https://tenxdev.com/login",  # Default login URL
     current_user: Dict = Depends(verify_admin_access)
 ):
@@ -91,6 +92,7 @@ async def process_batch(
                 batch=batch,
                 role=role,
                 group_id=group_id,
+                is_mock=is_mock,
                 delimiter=delimiter,
                 encoding=encoding,
                 chunk_size=chunk_size,

@@ -2,6 +2,7 @@ from fastapi import HTTPException
 import uuid
 from typing import Dict, Tuple, Union, Any
 import traceback
+import requests
 
 from review_scripts.strapi_graphql import StrapiGraphql
 from review_scripts.strapi_methods import StrapiMethods
@@ -51,13 +52,82 @@ class TraineeService:
         except Exception as e:
             print(f"Error during cleanup: {str(e)}")
 
+    def create_unconfirmed_user(self, user_data):
+        """
+        Create an unconfirmed user using the provided user data and return the result in JSON format.
+
+        Parameters:
+            sg: graphql object for interacting with the database
+            user_data: a dictionary containing user's username and email
+
+        Returns:
+            result_json: the result of the user creation in JSON format
+        """
+        try:
+            user_name = user_data['name']+"_"+ user_data['email']
+            user_var = {"username": user_name, "email": user_data['email'], "password": user_data['password']}
+            # Validate required fields
+            print("user_data...", user_var)
+            required_fields = ['username', 'email', 'password']
+            missing_fields = [field for field in required_fields if not user_var.get(field)]
+            if missing_fields:
+                return TraineeResponse.error_response(
+                    error_type="VALIDATION_ERROR",
+                    error_message=f"Missing required fields: {', '.join(missing_fields)}",
+                    error_location="user_creation",
+                    error_data={"missing_fields": missing_fields}
+                )
+
+            # Make the request to create user
+            response = requests.post(
+                "https://dev-cms.10academy.org/api/auth/local/register",
+                json=user_var,
+                headers={"Content-Type": "application/json"}
+            )
+            print("response...", response.json())
+            # Check if the request was successful
+            print("response...", response.json())
+            if response.status_code == 200:
+                return response.json()
+            else:
+                error_data = {
+                    "status_code": response.status_code,
+                    "response_text": response.text
+                }
+                return TraineeResponse.error_response(
+                    error_type="USER_CREATION_ERROR",
+                    error_message=f"Failed to create user. Status code: {response.status_code}",
+                    error_location="user_creation",
+                    error_data=error_data
+                )
+
+        except requests.exceptions.RequestException as e:
+            return TraineeResponse.error_response(
+                error_type="REQUEST_ERROR",
+                error_message=f"Request failed: {str(e)}",
+                error_location="user_creation",
+                error_data={"exception": str(e)}
+            )
+        except Exception as e:
+            return TraineeResponse.error_response(
+                error_type="UNEXPECTED_ERROR",
+                error_message=f"An unexpected error occurred: {str(e)}",
+                error_location="user_creation",
+                error_data={"exception": str(e)}
+            )
+
     def _insert_user_and_alluser(self, user_data: Dict) -> Union[Tuple[str, str], Dict[str, Any]]:
         """Insert user into both users and allusers tables"""
         
         try:
-            #create user first 
-            result_json = self.cm.create_user(self.sg, user_data)
-            user_id = result_json['data']['register']['user']['id']
+            if user_data['is_mock']:
+                result_json = self.cm.create_user(self.sg, user_data)
+                user_id = result_json['data']['register']['user']['id']
+            else:
+                result_json = self.create_unconfirmed_user(user_data)
+                user_id = result_json['user']['id']
+            print("user_id...", user_id)
+            
             self.created_resources['user_id'] = user_id
         except Exception as e:
             self._cleanup_resources('user')
@@ -132,7 +202,7 @@ class TraineeService:
             # Process trainee data
             print("trainee data ", self.trainee_data)
             processed_data = self.data_processor.process_single_trainee(self.trainee_data)
-
+            processed_data['is_mock'] = self.config.is_mock
             # Split name into first and last name
             name_parts = processed_data['name'].split()
             first_name = name_parts[0]
@@ -145,7 +215,8 @@ class TraineeService:
                 "role": processed_data['role'],
                 "batch_id": processed_data['batch_id'],
                 "groups": processed_data['groups'],
-                "password": processed_data['password']
+                "password": processed_data['password'],
+                "is_mock": processed_data['is_mock']
             }
             
             user_result = self._insert_user_and_alluser(user_data)

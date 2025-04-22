@@ -58,7 +58,9 @@ class EmailService:
     @async_wrap
     def send_batch_summary_email(self, admin_email: str, batch_id: int, 
                                total: int, successful: int, failed: int, 
-                               error_details: Optional[List[Dict]] = None) -> bool:
+                               error_details: Optional[List[Dict]] = None,
+                               successful_details: Optional[List[Dict]] = None,
+                               is_mock: bool = False) -> bool:
         """
         Send batch processing summary email to administrator
         Args:
@@ -68,6 +70,8 @@ class EmailService:
             successful: Number of successful registrations
             failed: Number of failed registrations
             error_details: List of errors encountered
+            successful_details: List of successful trainees with credentials if mock mode
+            is_mock: Whether this is a mock batch
         Returns:
             bool: True if email sent successfully, False otherwise
         """
@@ -87,6 +91,8 @@ class EmailService:
         - Success Rate: {success_rate:.2f}%
 
         {self._format_error_details(error_details) if error_details else ""}
+
+        {self._format_successful_details(successful_details) if successful_details and is_mock else ""}
 
         Best regards,
         System Administrator
@@ -144,3 +150,16 @@ class EmailService:
         for error in error_details:
             error_text += f"- {error.get('email', 'Unknown')}: {error.get('reason', 'Unknown error')}\n"
         return error_text 
+
+    def _format_successful_details(self, successful_details: List[Dict]) -> str:
+        """Format successful trainee details for email body"""
+        if not successful_details:
+            return ""
+            
+        details_text = "\nSuccessful Trainees:\n"
+        for trainee in successful_details:
+            details_text += f"- {trainee.get('name', 'Unknown')} ({trainee.get('email', 'Unknown')})\n"
+            if 'credentials' in trainee:
+                details_text += f"  Username: {trainee['credentials']['username']}\n"
+                details_text += f"  Password: {trainee['credentials']['password']}\n"
+        return details_text 

@@ -153,7 +153,8 @@ class BatchService:
                     run_stage=self.config.run_stage,
                     batch=str(self.config.batch),
                     role=self.config.role,
-                    group_id=self.config.group_id
+                    group_id=self.config.group_id,
+                    is_mock=self.config.is_mock  # Pass mock flag to config
                 ),
                 trainee=TraineeInfo(**{
                     'name': processed_data['name'],
@@ -183,6 +184,12 @@ class BatchService:
                     'tenx_id': result.get('data', {}).get('trainee', {}).get('id'),
                     'password': processed_data['password']
                 }
+                
+                # If mock mode, send credentials to admin
+                if self.config.is_mock:
+                    await self._send_mock_credentials(response)
+                    
+                return response
             
             # Handle service error
             error_msg = result.get('error', {}).get('error_message', 'Unknown error') if isinstance(result, dict) else str(result)
@@ -200,6 +207,47 @@ class BatchService:
                 'traceback': traceback.format_exc()
             })
             return self._create_record_error(row_data, row_num, str(e))
+
+    async def _send_mock_credentials(self, trainee_data: Dict) -> None:
+        """Send mock credentials to admin email"""
+        try:
+            subject = f"Mock Trainee Credentials - {trainee_data['name']}"
+            message = f"""
+            New mock trainee created:
+            
+            Name: {trainee_data['name']}
+            Email: {trainee_data['email']}
+            Password: {trainee_data['password']}
+            Status: Accepted
+            
+            This is a mock account and has been automatically confirmed.
+            """
+            
+            # Send email to admin
+            await self.cm.send_email(
+                to_email=self.config.admin_email,
+                subject=subject,
+                message=message
+            )
+            
+            self.logger.info(
+                "Mock credentials sent to admin",
+                extra={
+                    'trainee_name': trainee_data['name'],
+                    'trainee_email': trainee_data['email'],
+                    'admin_email': self.config.admin_email
+                }
+            )
+            
+        except Exception as e:
+            self.logger.error(
+                "Failed to send mock credentials",
+                extra={
+                    'error': str(e),
+                    'trainee_name': trainee_data['name'],
+                    'trainee_email': trainee_data['email']
+                }
+            )
 
     def _read_csv_file(self) -> pd.DataFrame:
         """Read and validate CSV file"""
@@ -278,7 +326,7 @@ class BatchService:
         
         # Separate other info
         essential_fields = ['name', 'email', 'nationality', 'gender', 'date_of_birth', 'password',
-                          'vulnerable', 'bio', 'city_of_residence', 'role', 
+                          'vulnerable', 'bio', 'city_of_residence', 'role', 'is_mock',
                           'batch_id', 'groups', 'status']
         processed['other_info'] = {
             k: v for k, v in processed.items() 
@@ -389,6 +437,21 @@ class BatchService:
                             'reason': f"{trainee.get('error_type', 'Unknown Error')}: {trainee.get('error_message', 'No message')}"
                         })
                     
+                    # Prepare successful trainee details with credentials if mock mode
+                    successful_details = []
+                    for trainee in results.get('successful_trainees', []):
+                        trainee_info = {
+                            'email': trainee.get('email', 'Unknown'),
+                            'name': trainee.get('name', 'Unknown'),
+                            'status': 'Success'
+                        }
+                        if self.config.is_mock:
+                            trainee_info['credentials'] = {
+                                'username': trainee.get('email'),
+                                'password': trainee.get('password')
+                            }
+                        successful_details.append(trainee_info)
+                    
                     # Always send admin summary email
                     await self.email_service.send_batch_summary_email(
                         admin_email=self.config.admin_email,
@@ -396,7 +459,9 @@ class BatchService:
                         total=results.get('total_processed', 0),
                         successful=results.get('successful', 0),
                         failed=results.get('failed', 0),
-                        error_details=error_details
+                        error_details=error_details,
+                        successful_details=successful_details,
+                        is_mock=self.config.is_mock
                     )
                     
                     self.logger.info(
@@ -407,7 +472,8 @@ class BatchService:
                             'receiver': self.config.admin_email,
                             'batch_id': self.config.batch,
                             'status': 'delivered',
-                            'processing_status': results.get('status')
+                            'processing_status': results.get('status'),
+                            'is_mock': self.config.is_mock
                         }
                     )
                     
@@ -432,7 +498,7 @@ class BatchService:
                                         email=trainee['email'],
                                         username=trainee['email'],
                                         password=trainee.get('password', trainee['email']),
-                                        login_url= self.config.login_url
+                                        login_url=self.config.login_url
                                     )
                                     
                                     self.logger.info(

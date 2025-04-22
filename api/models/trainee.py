@@ -8,6 +8,7 @@ class ConfigInfo(BaseModel):
     run_stage: str
     batch: Optional[str] = ""  # For single trainee creation
     role: str = "trainee"
+    is_mock: bool = False
     group_id: Optional[str] = ""
     sheet_id: Optional[str] = None
     sheet_name: Optional[str] = None
@@ -169,6 +170,7 @@ class BatchConfig(BaseModel):
     run_stage: str
     batch: Optional[int] = None   # Using batch instead of batch_id to match API
     role: str = "trainee"
+    is_mock: bool = False
     group_id: Optional[str] = None
     delimiter: str = ","
     encoding: str = "utf-8"
