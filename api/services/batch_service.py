@@ -5,12 +5,14 @@ import logging
 import traceback
 from typing import Dict, List, Optional
 import io
+import csv
+import uuid
 
 # Import all your existing classes and models
 from review_scripts.strapi_graphql import StrapiGraphql
 from review_scripts.strapi_methods import StrapiMethods
 from review_scripts.communication_manager import CommunicationManager
-from api.models.trainee import BatchTraineeCreate, TraineeCreate, ConfigInfo, TraineeInfo
+from api.models.trainee import BatchTraineeCreate, TraineeCreate, ConfigInfo, TraineeInfo, BatchConfig
 from api.services.trainee_service import TraineeService
 from api.services.data_processor import DataProcessor
 from api.services.webhook_service import WebhookService
@@ -24,6 +26,7 @@ class BatchService:
     def __init__(self, batch_create: BatchTraineeCreate):
         self.batch_create = batch_create
         self.config = batch_create.config
+        self.file_content = batch_create.file_content
         self.sg = StrapiGraphql(run_stage=self.config.run_stage)
         self.sm = StrapiMethods(run_stage=self.config.run_stage)
         self.cm = CommunicationManager()
@@ -69,7 +72,7 @@ class BatchService:
     async def process_batch_trainees(self) -> Dict:
         """Main method to process batch of trainees"""
         start_time = datetime.now()
-        logger.info(f"Starting batch processing for batch {self.config.batch}")
+        self.logger.info(f"Starting batch processing for batch {self.config.batch}")
 
         try:
             # Process the batch
@@ -80,11 +83,11 @@ class BatchService:
             
             # Log completion
             duration = (datetime.now() - start_time).total_seconds()
-            logger.info(f"Batch processing completed in {duration:.2f} seconds", extra={
+            self.logger.info(f"Batch processing completed in {duration:.2f} seconds", extra={
                 'results_summary': {
-                    'total': results['total_processed'],
-                    'successful': results['successful'],
-                    'failed': results['failed']
+                    'total': results.get('total_processed', 0),
+                    'successful': results.get('successful', 0),
+                    'failed': results.get('failed', 0)
                 }
             })
             
@@ -92,15 +95,16 @@ class BatchService:
             
         except Exception as e:
             error_response = self._create_error_response(e)
-            logger.error("Batch processing failed", extra={
+            self.logger.error("Batch processing failed", extra={
                 'error': str(e),
                 'traceback': traceback.format_exc()
             })
             
+            # Ensure we still send notifications even on error
             try:
                 await self._send_notifications(error_response)
             except Exception as notify_error:
-                logger.error("Failed to send error notifications", extra={
+                self.logger.error("Failed to send error notifications", extra={
                     'error': str(notify_error)
                 })
             
@@ -120,22 +124,41 @@ class BatchService:
             
             # Process each record
             for index, row in df.iterrows():
-                row_num = index + 1
-                result = await self._process_trainee_record(row, row_num)
-                
-                if result['success']:
-                    successful.append(result)
-                else:
-                    failed.append(result)
+                try:
+                    row_num = index + 1
+                    result = await self._process_trainee_record(row, row_num)
+                    
+                    if result.get('status') == 'Success':
+                        successful.append(result)
+                    else:
+                        failed.append({
+                            'name': row.get('name', 'Unknown'),
+                            'email': row.get('email', 'Unknown'),
+                            'status': 'Failed',
+                            'error_type': result.get('error_type', 'PROCESSING_ERROR'),
+                            'error_message': result.get('error_message', 'Unknown error')
+                        })
+                except Exception as e:
+                    self.logger.error(f"Error processing row {index + 1}", extra={
+                        'error': str(e),
+                        'row_data': row.to_dict()
+                    })
+                    failed.append({
+                        'name': row.get('name', 'Unknown'),
+                        'email': row.get('email', 'Unknown'),
+                        'status': 'Failed',
+                        'error_type': 'PROCESSING_ERROR',
+                        'error_message': str(e)
+                    })
 
             return self._compile_results(total, successful, failed)
 
         except Exception as e:
-            logger.error("Error processing batch records", extra={
+            self.logger.error("Error processing batch records", extra={
                 'error': str(e),
                 'traceback': traceback.format_exc()
             })
-            raise
+            return self._create_error_response(e)
 
     async def _process_trainee_record(self, row: pd.Series, row_num: int) -> Dict:
         """Process a single trainee record"""
@@ -147,6 +170,9 @@ class BatchService:
             if not processed_data['name'] or not processed_data['email']:
                 raise ValueError("Name and email are required fields")
             
+            # Generate password based on config
+            password = self._generate_password(processed_data['email'])
+            
             # Create trainee
             trainee_create = TraineeCreate(
                 config=ConfigInfo(
@@ -154,12 +180,13 @@ class BatchService:
                     batch=str(self.config.batch),
                     role=self.config.role,
                     group_id=self.config.group_id,
-                    is_mock=self.config.is_mock  # Pass mock flag to config
+                    is_mock=self.config.is_mock,
+                    login_url=self.config.login_url
                 ),
                 trainee=TraineeInfo(**{
                     'name': processed_data['name'],
                     'email': processed_data['email'],
-                    'password': processed_data['password'],
+                    'password': password,
                     'status': processed_data.get('status', 'Accepted'),
                     'nationality': processed_data.get('nationality', ''),
                     'gender': processed_data.get('gender', ''),
@@ -175,85 +202,56 @@ class BatchService:
             trainee_service = TraineeService(trainee_create)
             result = trainee_service.create_trainee_services()  # Remove await since it's synchronous
             
-            if isinstance(result, dict) and result.get('success', False):
+            if result.get('success'):
+                # If real user, send welcome email
+                # Disabled for now not allowed to send emails to trainees
+                # if not self.config.is_mock:
+                #     await self.email_service.send_trainee_welcome_email(
+                #         email=processed_data['email'],
+                #         username=processed_data['email'],
+                #         password=password,
+                #         login_url=self.config.login_url
+                #     )
+                
                 return {
-                    'success': True,
-                    'row': row_num,
                     'name': processed_data['name'],
                     'email': processed_data['email'],
-                    'tenx_id': result.get('data', {}).get('trainee', {}).get('id'),
-                    'password': processed_data['password']
+                    'password': password if self.config.is_mock else None,
+                    'status': 'Success'
                 }
-                
-                # If mock mode, send credentials to admin
-                if self.config.is_mock:
-                    await self._send_mock_credentials(response)
-                    
-                return response
-            
-            # Handle service error
-            error_msg = result.get('error', {}).get('error_message', 'Unknown error') if isinstance(result, dict) else str(result)
-            logger.error(f"Failed to process trainee at row {row_num}", extra={
-                'email': processed_data['email'],
-                'error': error_msg,
-                'result': str(result)
-            })
-            return self._create_record_error(row_data, row_num, error_msg)
-            
+            else:
+                return {
+                    'name': processed_data['name'],
+                    'email': processed_data['email'],
+                    'password': password if self.config.is_mock else None,
+                    'status': 'Failed',
+                    'error_type': result.get('error', {}).get('error_type', 'PROCESSING_ERROR'),
+                    'error_message': result.get('error', {}).get('error_message', 'Unknown error')
+                }
         except Exception as e:
-            logger.error(f"Unexpected error processing trainee at row {row_num}", extra={
-                'email': row_data.get('email', 'Unknown'),
-                'error': str(e),
-                'traceback': traceback.format_exc()
-            })
-            return self._create_record_error(row_data, row_num, str(e))
+            return {
+                'name': row_data.get('name', ''),
+                'email': row_data.get('email', ''),
+                'password': None,
+                'status': 'Failed',
+                'error_type': 'PROCESSING_ERROR',
+                'error_message': str(e)
+            }
 
-    async def _send_mock_credentials(self, trainee_data: Dict) -> None:
-        """Send mock credentials to admin email"""
-        try:
-            subject = f"Mock Trainee Credentials - {trainee_data['name']}"
-            message = f"""
-            New mock trainee created:
-            
-            Name: {trainee_data['name']}
-            Email: {trainee_data['email']}
-            Password: {trainee_data['password']}
-            Status: Accepted
-            
-            This is a mock account and has been automatically confirmed.
-            """
-            
-            # Send email to admin
-            await self.cm.send_email(
-                to_email=self.config.admin_email,
-                subject=subject,
-                message=message
-            )
-            
-            self.logger.info(
-                "Mock credentials sent to admin",
-                extra={
-                    'trainee_name': trainee_data['name'],
-                    'trainee_email': trainee_data['email'],
-                    'admin_email': self.config.admin_email
-                }
-            )
-            
-        except Exception as e:
-            self.logger.error(
-                "Failed to send mock credentials",
-                extra={
-                    'error': str(e),
-                    'trainee_name': trainee_data['name'],
-                    'trainee_email': trainee_data['email']
-                }
-            )
+    def _generate_password(self, email: str) -> str:
+        """Generate password based on config options"""
+        if self.config.password_option == "default":
+            return self.config.default_password or "10academy"
+        elif self.config.password_option == "auto":
+            return str(uuid.uuid4())[:8]  # Generate random 8-character password
+        else:  # "provided"
+            return email  # Use email as password
 
     def _read_csv_file(self) -> pd.DataFrame:
         """Read and validate CSV file"""
         try:
             df = pd.read_csv(
-                io.BytesIO(self.batch_create.file_content),
+                io.BytesIO(self.file_content),
                 delimiter=self.config.delimiter,
                 encoding=self.config.encoding
             )
@@ -305,7 +303,10 @@ class BatchService:
             'email': str(row_data.get('email', '')).strip().lower()
         }
         #process password
-        processed['password'] = generate_secure_password()
+        if self.config.is_mock:
+            processed['password'] = "10@Academy"
+        else:
+            processed['password'] = generate_secure_password()
         # Process optional fields
         optional_fields = [
             'nationality', 'gender', 'date_of_birth', 
@@ -346,11 +347,6 @@ class BatchService:
             'failed': len(failed),
             'successful_trainees': successful,
             'failed_trainees': failed,
-            'errors': [{
-                'row': t['row'],
-                'email': t['email'],
-                'error_message': t['error_message']
-            } for t in failed],  # Add error details
             'batch': self.config.batch,
             'timestamp': datetime.now().isoformat(),
             'metadata': {
@@ -360,36 +356,23 @@ class BatchService:
             }
         }
 
-    def _create_record_error(self, row_data: Dict, row_num: int, error_msg: str) -> Dict:
-        """Create standardized error response for a record"""
-        return {
-            'success': False,
-            'row': row_num,
-            'name': row_data.get('name', 'Unknown'),
-            'email': row_data.get('email', 'Unknown'),
-            'error_type': 'PROCESSING_ERROR',
-            'error_message': error_msg,
-            'trainee_data': row_data
-        }
-
     def _create_error_response(self, error: Exception) -> Dict:
         """Create error response for batch failures"""
         return {
             'status': 'failed',
-            'error': str(error),
             'error_type': 'BATCH_PROCESSING_ERROR',
+            'error_message': str(error),
             'batch': self.config.batch,
             'timestamp': datetime.now().isoformat(),
             'total_processed': 0,
             'successful': 0,
             'failed': 0,
             'failed_trainees': [{
-                'row': 0,
                 'name': 'Batch Error',
                 'email': 'N/A',
+                'status': 'Failed',
                 'error_type': 'BATCH_PROCESSING_ERROR',
-                'error_message': str(error),
-                'trainee_data': {}
+                'error_message': str(error)
             }],
             'metadata': {
                 'run_stage': self.config.run_stage,
@@ -452,7 +435,7 @@ class BatchService:
                             }
                         successful_details.append(trainee_info)
                     
-                    # Always send admin summary email
+                    # Send summary email
                     await self.email_service.send_batch_summary_email(
                         admin_email=self.config.admin_email,
                         batch_id=self.config.batch,
@@ -464,8 +447,20 @@ class BatchService:
                         is_mock=self.config.is_mock
                     )
                     
+                    # Create and send CSV email
+                    csv_content = self._create_summary_csv(
+                        results.get('successful_trainees', []),
+                        results.get('failed_trainees', [])
+                    )
+                    
+                    await self.email_service.send_batch_csv_email(
+                        admin_email=self.config.admin_email,
+                        batch_id=self.config.batch,
+                        csv_content=csv_content
+                    )
+                    
                     self.logger.info(
-                        f"Admin summary email delivered",
+                        f"Admin summary and CSV emails delivered",
                         extra={
                             'notification_type': 'admin_summary',
                             'sender': self.sender_email,
@@ -490,42 +485,42 @@ class BatchService:
                             }
                         )
                         
-                        # Send welcome emails to successful trainees
-                        for trainee in successful_trainees:
-                            if trainee.get('email'):
-                                try:
-                                    await self.email_service.send_trainee_welcome_email(
-                                        email=trainee['email'],
-                                        username=trainee['email'],
-                                        password=trainee.get('password', trainee['email']),
-                                        login_url=self.config.login_url
-                                    )
+                        # Send welcome emails to successful trainees Disabled for now not allowed to send emails to trainees
+                        # for trainee in successful_trainees:
+                        #     if trainee.get('email'):
+                        #         try:
+                        #             await self.email_service.send_trainee_welcome_email(
+                        #                 email=trainee['email'],
+                        #                 username=trainee['email'],
+                        #                 password=trainee.get('password', trainee['email']),
+                        #                 login_url=self.config.login_url
+                        #             )
                                     
-                                    self.logger.info(
-                                        f"Trainee welcome email delivered",
-                                        extra={
-                                            'notification_type': 'trainee_welcome',
-                                            'sender': self.sender_email,
-                                            'receiver': trainee['email'],
-                                            'batch_id': self.config.batch,
-                                            'status': 'delivered'
-                                        }
-                                    )
-                                except Exception as e:
-                                    self.logger.error(
-                                        f"Failed to send trainee welcome email",
-                                        extra={
-                                            'notification_type': 'trainee_welcome',
-                                            'sender': self.sender_email,
-                                            'receiver': trainee['email'],
-                                            'batch_id': self.config.batch,
-                                            'error': str(e)
-                                        }
-                                    )
+                        #             self.logger.info(
+                        #                 f"Trainee welcome email delivered",
+                        #                 extra={
+                        #                     'notification_type': 'trainee_welcome',
+                        #                     'sender': self.sender_email,
+                        #                     'receiver': trainee['email'],
+                        #                     'batch_id': self.config.batch,
+                        #                     'status': 'delivered'
+                        #                 }
+                        #             )
+                        #         except Exception as e:
+                        #             self.logger.error(
+                        #                 f"Failed to send trainee welcome email",
+                        #                 extra={
+                        #                     'notification_type': 'trainee_welcome',
+                        #                     'sender': self.sender_email,
+                        #                     'receiver': trainee['email'],
+                        #                     'batch_id': self.config.batch,
+                        #                     'error': str(e)
+                        #                 }
+                        #             )
                                 
                 except Exception as e:
                     self.logger.error(
-                        f"Failed to send admin summary email",
+                        f"Failed to send admin emails",
                         extra={
                             'notification_type': 'admin_summary',
                             'sender': self.sender_email,
@@ -584,3 +579,105 @@ class BatchService:
                 'error_step': error_step,
                 'error': str(e)
             })
+
+    def _create_summary_csv(self, successful_trainees: List[Dict], failed_trainees: List[Dict]) -> bytes:
+        """Create CSV file with trainee summary"""
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # Write header
+        if self.config.is_mock:
+            writer.writerow(["Name", "Email", "Password", "Status", "Error Message"])
+        else:
+            writer.writerow(["Name", "Email", "Status", "Error Message"])
+        
+        # Write successful trainees
+        for trainee in successful_trainees:
+            if self.config.is_mock:
+                writer.writerow([
+                    trainee.get('name', ''),
+                    trainee.get('email', ''),
+                    trainee.get('password', ''),
+                    "Success",
+                    ""
+                ])
+            else:
+                writer.writerow([
+                    trainee.get('name', ''),
+                    trainee.get('email', ''),
+                    "Success",
+                    ""
+                ])
+        
+        # Write failed trainees
+        for trainee in failed_trainees:
+            if self.config.is_mock:
+                writer.writerow([
+                    trainee.get('name', ''),
+                    trainee.get('email', ''),
+                    trainee.get('password', ''),
+                    "Failed",
+                    trainee.get('error_message', 'Unknown error')
+                ])
+            else:
+                writer.writerow([
+                    trainee.get('name', ''),
+                    trainee.get('email', ''),
+                    "Failed",
+                    trainee.get('error_message', 'Unknown error')
+                ])
+        
+        # Get the CSV content and encode it
+        csv_content = output.getvalue()
+        output.close()
+        
+        return csv_content.encode('utf-8')
+
+    async def _send_summary_email(self, successful_trainees: List[Dict], failed_trainees: List[Dict]):
+        """Send summary email with CSV attachment"""
+        if not self.config.admin_email:
+            logger.warning("No admin email provided for summary")
+            return
+
+        try:
+            # Create CSV attachment
+            csv_content = self._create_summary_csv(successful_trainees, failed_trainees)
+            
+            # Prepare email content
+            subject = f"Batch Processing Summary - {'Mock' if self.config.is_mock else 'Real'} Users"
+            body = f"""
+            Batch Processing Summary:
+            
+            Total Processed: {len(successful_trainees) + len(failed_trainees)}
+            Successful: {len(successful_trainees)}
+            Failed: {len(failed_trainees)}
+            
+            Please find the detailed summary in the attached CSV file.
+            """
+            
+            # Send email with attachment
+            await self.email_service.send_email_with_attachment(
+                to_email=self.config.admin_email,
+                subject=subject,
+                body=body,
+                attachment_name="batch_summary.csv",
+                attachment_content=csv_content
+            )
+            
+            logger.info(
+                "Batch summary email sent",
+                extra={
+                    'notification_type': 'batch_summary',
+                    'receiver': self.config.admin_email,
+                    'status': 'delivered'
+                }
+            )
+        except Exception as e:
+            logger.error(
+                "Failed to send batch summary email",
+                extra={
+                    'notification_type': 'batch_summary',
+                    'receiver': self.config.admin_email,
+                    'error': str(e)
+                }
+            )

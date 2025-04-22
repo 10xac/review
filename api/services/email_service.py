@@ -90,14 +90,135 @@ class EmailService:
         - Failed: {failed}
         - Success Rate: {success_rate:.2f}%
 
-        {self._format_error_details(error_details) if error_details else ""}
 
-        {self._format_successful_details(successful_details) if successful_details and is_mock else ""}
+        Please find attached the detailed CSV report for Batch {batch_id}.
+      
 
         Best regards,
         System Administrator
         """
+          # {self._format_error_details(error_details) if error_details else ""}
+
+        # {self._format_successful_details(successful_details) if successful_details and is_mock else ""}
         return self._send_email(admin_email, subject, body)
+
+    @async_wrap
+    def send_batch_csv_email(self, admin_email: str, batch_id: int, csv_content: bytes) -> bool:
+        """
+        Send batch CSV details as a separate email
+        Args:
+            admin_email: Administrator's email address
+            batch_id: Batch identifier
+            csv_content: CSV content in bytes
+        Returns:
+            bool: True if email sent successfully, False otherwise
+        """
+        if not self.source_email:
+            self.logger.error("Source email not configured")
+            return False
+
+        try:
+            # Create MIME message
+            import email.mime.multipart
+            import email.mime.text
+            import email.mime.application
+            import base64
+
+            msg = email.mime.multipart.MIMEMultipart()
+            msg['Subject'] = f"Batch {batch_id} - Detailed CSV Report"
+            msg['From'] = self.source_email
+            msg['To'] = admin_email
+
+            # Add text part
+            text = f"""
+            Dear Administrator,
+
+            Please find attached the detailed CSV report for Batch {batch_id}.
+
+            Best regards,
+            System Administrator
+            """
+            msg.attach(email.mime.text.MIMEText(text))
+
+            # Add CSV attachment
+            part = email.mime.application.MIMEApplication(csv_content)
+            part.add_header('Content-Disposition', 'attachment', filename=f"batch_{batch_id}_details.csv")
+            msg.attach(part)
+
+            # Send raw email
+            response = self.client.send_raw_email(
+                Source=self.source_email,
+                Destinations=[admin_email],
+                RawMessage={'Data': msg.as_string()}
+            )
+            
+            self.logger.info(f"CSV email sent successfully to {admin_email}", 
+                           extra={'message_id': response['MessageId']})
+            return True
+            
+        except ClientError as e:
+            self.logger.error(f"Failed to send CSV email to {admin_email}: {str(e)}")
+            return False
+        except Exception as e:
+            self.logger.error(f"Unexpected error sending CSV email to {admin_email}: {str(e)}")
+            return False
+
+    @async_wrap
+    def send_email_with_attachment(self, to_email: str, subject: str, body: str, 
+                                 attachment_name: str, attachment_content: bytes) -> bool:
+        """
+        Send email with attachment using Amazon SES
+        Args:
+            to_email: Recipient email address
+            subject: Email subject
+            body: Email body
+            attachment_name: Name of the attachment file
+            attachment_content: Content of the attachment in bytes
+        Returns:
+            bool: True if email sent successfully, False otherwise
+        """
+        if not self.source_email:
+            self.logger.error("Source email not configured")
+            return False
+
+        try:
+            # Create message with attachment
+            message = {
+                'Subject': {
+                    'Data': subject
+                },
+                'Body': {
+                    'Text': {
+                        'Data': body
+                    }
+                }
+            }
+
+            # Add attachment
+            message['Attachments'] = [{
+                'Filename': attachment_name,
+                'Content': attachment_content,
+                'ContentType': 'text/csv'
+            }]
+
+            response = self.client.send_email(
+                Source=self.source_email,
+                Destination={
+                    'ToAddresses': [to_email]
+                },
+                Message=message
+            )
+            
+            self.logger.info(f"Email with attachment sent successfully to {to_email}", 
+                           extra={'message_id': response['MessageId']})
+            return True
+            
+        except ClientError as e:
+            self.logger.error(f"Failed to send email with attachment to {to_email}: {str(e)}")
+            return False
+        except Exception as e:
+            self.logger.error(f"Unexpected error sending email with attachment to {to_email}: {str(e)}")
+            return False
 
     def _send_email(self, to_email: str, subject: str, body: str) -> bool:
         """

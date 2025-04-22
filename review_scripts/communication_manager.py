@@ -21,7 +21,7 @@ class CommunicationManager:
         username = user_data['name']+"_"+ user_data['email']
 
         variables = {"username": username, "email":user_data['email'], "password":user_data['password']}
-
+        print("variables.....",variables)
         result_json = sg.Select_from_table(query=query, variables= variables)
         return result_json
     
