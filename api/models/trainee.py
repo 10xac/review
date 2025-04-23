@@ -27,6 +27,22 @@ class TraineeInfo(BaseModel):
     bio: Optional[str] = ""
     other_info: Optional[Union[Dict[str, Any], str]] = Field(default_factory=dict)
 
+    @validator('name')
+    def validate_name(cls, v):
+        if not v or not isinstance(v, str):
+            raise ValueError('Name is required and must be a string')
+        
+        # Remove extra spaces and check if the name is empty after cleaning
+        cleaned_name = v.strip()
+        if not cleaned_name:
+            raise ValueError('Name cannot be empty')
+        
+        # Basic name validation - should contain at least one letter
+        if not any(c.isalpha() for c in cleaned_name):
+            raise ValueError('Name must contain at least one letter')
+            
+        return cleaned_name
+
     @validator('email')
     def validate_email(cls, v):
         if not v or not isinstance(v, str):

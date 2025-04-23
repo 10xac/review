@@ -1,8 +1,16 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exceptions import RequestValidationError
+from pydantic import ValidationError
 from api.routes import trainee_routes, batch_routes, webhook_routes
+from api.core.error_handlers import validation_exception_handler, pydantic_validation_exception_handler
 from typing import List
+
 app = FastAPI(title="10 Academy User API")
+
+# Add exception handlers
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
+app.add_exception_handler(ValidationError, pydantic_validation_exception_handler)
 
 # CORS Settings
 ALLOWED_ORIGINS: List[str] = [
