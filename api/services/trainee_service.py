@@ -200,6 +200,10 @@ class TraineeService:
         try:
             
             # Process trainee data
+            self.logger.info("Processing trainee data", extra={
+                'trainee_data': self.trainee_data,
+                'config': self.config
+            })  
             print("trainee data ", self.trainee_data)
             processed_data = self.data_processor.process_single_trainee(self.trainee_data)
             processed_data['is_mock'] = self.config.is_mock

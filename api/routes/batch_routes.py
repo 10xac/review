@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File, status, BackgroundTasks, Depends
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form, status, BackgroundTasks, Depends, Request
 from typing import Optional, Dict
 import json
 import traceback
@@ -12,17 +12,19 @@ router = APIRouter(prefix="/trainee", tags=["trainee"])
 
 @router.post("/batch", response_model=BatchProcessingResponse)
 async def process_batch( 
+    request: Request,
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
-    run_stage: str = "dev",
-    batch: int = None,
-    role: str = "trainee",
-    group_id: Optional[str] = None,
-    delimiter: str = ",",
-    encoding: str = "utf-8",
-    chunk_size: int = 20,
-    is_mock: bool = False,
-    login_url: str = "https://tenxdev.com/login",  # Default login URL
+    run_stage: str = Form("dev"),
+    batch: Optional[str] = Form(""),
+    role: str = Form("trainee"),
+    group_id: Optional[str] = Form(None),
+    delimiter: str = Form(","),
+    encoding: str = Form("utf-8"),
+    chunk_size: int = Form(20),
+    is_mock: bool = Form(False),
+    login_url: Optional[str] = Form(None),
+   
     current_user: Dict = Depends(verify_admin_access)
 ):
     """
@@ -44,13 +46,6 @@ async def process_batch(
     """
     
     try:
-        if isinstance(current_user, dict) and "success" in current_user and not current_user["success"]:
-            return BatchProcessingResponse.error_response(
-                error_type=current_user["error"]["error_type"],
-                error_message=current_user["error"]["error_message"],
-                error_location=current_user["error"]["error_location"],
-                error_data=current_user["error"]["error_data"]
-            )
         # Validate file
         if not file.filename:
             return BatchProcessingResponse.error_response(
@@ -59,34 +54,39 @@ async def process_batch(
                 error_location="file_validation",
                 error_data={"filename": file.filename}
             )
+
+        # Read and validate file content
+        file_content = await file.read()
+        print(f"File size: {len(file_content)} bytes")
+        
+        try:
+            preview = file_content[:100].decode('utf-8')
+            print(f"Content preview: {preview}")
+        except UnicodeDecodeError:
+            print("Note: File content is not UTF-8 decodable")
             
-        # Validate batch
-        if batch is None:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="batch parameter is required"
-            )
+        # Extract origin from headers
+        origin = request.headers.get('origin')
+        if not origin:
+            origin = request.headers.get('referer')
+        if not origin:
+            origin = 'https://dev-tenx.10academy.org'
+        origin = origin.rstrip('/')
+        actual_login_url = f"{origin}/login"
 
-        # Validate login_url
-        if not re.match(r'^https?://', login_url):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="login_url must be a valid HTTP(S) URL"
+        # Validate login_url format
+        if not re.match(r'^https?://', actual_login_url):
+            return BatchProcessingResponse.error_response(
+                error_type="VALIDATION_ERROR",
+                error_message="login_url must be a valid HTTP(S) URL",
+                error_location="login_url_validation",
+                error_data={"login_url": actual_login_url}
             )
-
+        
         # Use authenticated user's email as admin_email
         admin_email = current_user["email"]
-        print(f"Using authenticated user's email as admin email: {admin_email}")
-
-        # Validate admin_email
-        if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', admin_email):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid admin email format"
-            )
 
         try:
-            # Create config
             config = BatchConfig(
                 run_stage=run_stage,
                 batch=batch,
@@ -96,70 +96,38 @@ async def process_batch(
                 delimiter=delimiter,
                 encoding=encoding,
                 chunk_size=chunk_size,
-                login_url=login_url,
+                login_url=actual_login_url,
                 admin_email=admin_email
+
             )
+            
         except Exception as config_error:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Invalid configuration: {str(config_error)}"
+            return BatchProcessingResponse.error_response(
+                error_type="VALIDATION_ERROR",
+                error_message=f"Invalid configuration: {str(config_error)}",
+                error_location="config_validation",
+                error_data={"config_error": str(config_error)}
             )
         
         try:
-            # Read file content
-            file_content = await file.read()
-            if not file_content:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Empty file provided"
-                )
-        except Exception as file_error:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Error reading file: {str(file_error)}"
-            )
-        
-        try:
-            # Create BatchTraineeCreate instance
             batch_create = BatchTraineeCreate(
                 config=config,
                 file_content=file_content
             )
+            
         except Exception as batch_create_error:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Error creating batch request: {str(batch_create_error)}"
+            return BatchProcessingResponse.error_response(
+                error_type="VALIDATION_ERROR",
+                error_message=f"Error creating batch request: {str(batch_create_error)}",
+                error_location="batch_create_validation",
+                error_data={"batch_create_error": str(batch_create_error)}
             )
         
-        async def process_batch_background(service: BatchService):
-            try:
-                results = await service.process_batch_trainees()
-                # Log the results
-                service.logger.info(
-                    "Batch processing completed",
-                    extra={
-                        'batch_id': batch,
-                        'total_processed': results.get('total_processed', 0),
-                        'successful': results.get('successful', 0),
-                        'failed': results.get('failed', 0),
-                        'status': results.get('status', 'unknown')
-                    }
-                )
-            except Exception as e:
-                service.logger.error(
-                    "Batch processing failed",
-                    extra={
-                        'batch_id': batch,
-                        'error': str(e),
-                        'traceback': traceback.format_exc()
-                    }
-                )
-        
-        # Create service instance
+        # Create service instance and add background task
         batch_service = BatchService(batch_create)
-        
-        # Add the background task
         background_tasks.add_task(process_batch_background, batch_service)
+        
+        print("=== Starting Background Processing ===")
         
         return BatchProcessingResponse.success_response(
             message="Batch processing started",
@@ -168,11 +136,38 @@ async def process_batch(
         )
         
     except HTTPException as http_error:
+        print(f"HTTP Exception: {str(http_error)}")
         raise http_error
     except Exception as e:
         print(f"Unexpected error: {str(e)}")
         print(f"Traceback: {traceback.format_exc()}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An unexpected error occurred: {str(e)}"
+        return BatchProcessingResponse.error_response(
+            error_type="INTERNAL_SERVER_ERROR",
+            error_message=f"An unexpected error occurred: {str(e)}",
+            error_location="unexpected_error",
+            error_data={"error": str(e)}
+        )
+
+async def process_batch_background(service: BatchService):
+    try:
+        results = await service.process_batch_trainees()
+        
+        service.logger.info(
+            "Batch processing completed",
+            extra={
+                'batch_id': service.config.batch,
+                'total_processed': results.get('total_processed', 0),
+                'successful': results.get('successful', 0),
+                'failed': results.get('failed', 0),
+                'status': results.get('status', 'unknown')
+            }
+        )
+    except Exception as e:
+        service.logger.error(
+            "Batch processing failed",
+            extra={
+                'batch_id': service.config.batch,
+                'error': str(e),
+                'traceback': traceback.format_exc()
+            }
         ) 

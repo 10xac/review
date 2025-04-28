@@ -103,7 +103,7 @@ class EmailService:
         return self._send_email(admin_email, subject, body)
 
     @async_wrap
-    def send_batch_csv_email(self, admin_email: str, batch_id: int, csv_content: bytes) -> bool:
+    def send_batch_csv_email(self, admin_email: str, batch_id: int, csv_content: bytes, results: Dict) -> bool:
         """
         Send batch CSV details as a separate email
         Args:
@@ -113,6 +113,7 @@ class EmailService:
         Returns:
             bool: True if email sent successfully, False otherwise
         """
+      
         if not self.source_email:
             self.logger.error("Source email not configured")
             return False
@@ -125,13 +126,29 @@ class EmailService:
             import base64
 
             msg = email.mime.multipart.MIMEMultipart()
-            msg['Subject'] = f"Batch {batch_id} - Detailed CSV Report"
-            msg['From'] = self.source_email
-            msg['To'] = admin_email
+            subject = f"Batch Processing Summary - {'Mock' if results['is_mock'] else 'Actual'} Users"
 
+            msg['Subject'] = subject
+            msg['From'] = self.source_email
+            msg['To'] = results.get('admin_email')
+
+            
+          
+             
+             # Prepare email content
+           
+            print ("results['successful_trainees']",results['successful_trainees'])
+            print ("results['failed_trainees']",results['failed_trainees']) 
+            print ("admin_email",admin_email)
             # Add text part
             text = f"""
             Dear Administrator,
+            
+            Batch Processing Summary:
+            
+            Total Processed: {len(results['successful_trainees']) + len(results['failed_trainees'])}
+            Successful: {len(results['successful_trainees'])}
+            Failed: {len(results['failed_trainees'])}
 
             Please find attached the detailed CSV report for Batch {batch_id}.
 

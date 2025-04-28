@@ -34,12 +34,12 @@ class BatchService:
         self.logger = setup_logging()
         
         # Initialize webhook service if callback_url is provided
-        
         self.webhook_service = WebhookService(self.config) if self.config.callback_url else None
         
         # Initialize email service
         self.sender_email = "train@10academy.org"
         self.email_service = None
+        
         if self.config.admin_email:
             try:
                 self.email_service = EmailService(source_email=self.sender_email)
@@ -72,7 +72,7 @@ class BatchService:
     async def process_batch_trainees(self) -> Dict:
         """Main method to process batch of trainees"""
         start_time = datetime.now()
-        self.logger.info(f"Starting batch processing for batch {self.config.batch}")
+        self.logger.info(f"Starting batch processing", extra={'batch': self.config.batch})
 
         try:
             # Process the batch
@@ -83,12 +83,12 @@ class BatchService:
             
             # Log completion
             duration = (datetime.now() - start_time).total_seconds()
-            self.logger.info(f"Batch processing completed in {duration:.2f} seconds", extra={
-                'results_summary': {
-                    'total': results.get('total_processed', 0),
-                    'successful': results.get('successful', 0),
-                    'failed': results.get('failed', 0)
-                }
+            self.logger.info("Batch processing completed", extra={
+                'duration_seconds': duration,
+                'batch': self.config.batch,
+                'total': results.get('total_processed', 0),
+                'successful': results.get('successful', 0),
+                'failed': results.get('failed', 0)
             })
             
             return results
@@ -115,7 +115,20 @@ class BatchService:
         try:
             # Read and validate CSV
             df = self._read_csv_file()
-            if isinstance(df, dict):  # Return early if validation failed
+            if isinstance(df, dict) and 'error' in df:
+                return df
+                
+            if len(df) == 0:
+                return {
+                    'status': 'completed',
+                    'total_processed': 0,
+                    'successful': 0,
+                    'failed': 0,
+                    'successful_trainees': [],
+                    'failed_trainees': []
+                }
+
+            if isinstance(df, dict):
                 return df
 
             total = len(df)
@@ -139,7 +152,8 @@ class BatchService:
                             'error_message': result.get('error_message', 'Unknown error')
                         })
                 except Exception as e:
-                    self.logger.error(f"Error processing row {index + 1}", extra={
+                    self.logger.error("Error processing trainee record", extra={
+                        'row': index + 1,
                         'error': str(e),
                         'row_data': row.to_dict()
                     })
@@ -154,9 +168,9 @@ class BatchService:
             return self._compile_results(total, successful, failed)
 
         except Exception as e:
-            self.logger.error("Error processing batch records", extra={
+            self.logger.error("Error in batch record processing", extra={
                 'error': str(e),
-                'traceback': traceback.format_exc()
+                'batch': self.config.batch
             })
             return self._create_error_response(e)
 
@@ -170,8 +184,9 @@ class BatchService:
             if not processed_data['name'] or not processed_data['email']:
                 raise ValueError("Name and email are required fields")
             
-            # Generate password based on config
-            password = self._generate_password(processed_data['email'])
+
+            password = processed_data['password']
+            
             
             # Create trainee
             trainee_create = TraineeCreate(
@@ -237,32 +252,39 @@ class BatchService:
                 'error_type': 'PROCESSING_ERROR',
                 'error_message': str(e)
             }
-
-    def _generate_password(self, email: str) -> str:
-        """Generate password based on config options"""
-        if self.config.password_option == "default":
-            return self.config.default_password or "10academy"
-        elif self.config.password_option == "auto":
-            return str(uuid.uuid4())[:8]  # Generate random 8-character password
-        else:  # "provided"
-            return email  # Use email as password
+# Not used anymore
+    # def _generate_password(self, email: str) -> str:
+    #     """Generate password based on config options"""
+    #     print ("self.config.password_option",self.config.password_option)
+    #     if self.config.password_option == "default":
+    #         return self.config.default_password or "10$academy"
+    #     elif self.config.password_option == "auto":
+    #         return str(uuid.uuid4())[:8]  # Generate random 8-character password
+    #     else:  # "provided"
+    #         return email  # Use email as password
 
     def _read_csv_file(self) -> pd.DataFrame:
         """Read and validate CSV file"""
         try:
+            bytes_io = io.BytesIO(self.file_content)
             df = pd.read_csv(
-                io.BytesIO(self.file_content),
+                bytes_io,
                 delimiter=self.config.delimiter,
                 encoding=self.config.encoding
             )
             
             # Validate required columns
             required_columns = {'name', 'email'}
-            if not required_columns.issubset(df.columns):
-                missing = required_columns - set(df.columns)
+            missing = required_columns - set(df.columns)
+            if missing:
+                error_msg = f'Missing required columns: {missing}'
+                self.logger.error("CSV validation failed", extra={
+                    'error': error_msg,
+                    'batch': self.config.batch
+                })
                 return {
                     'status': 'failed',
-                    'error': f'Missing required columns: {missing}',
+                    'error': error_msg,
                     'error_type': 'VALIDATION_ERROR',
                     'batch': self.config.batch,
                     'total_processed': 0,
@@ -271,13 +293,18 @@ class BatchService:
                     'failed_trainees': []
                 }
             
-            # Validate that name and email are not empty
-            invalid_rows = df[df['name'].isna() | df['email'].isna() | (df['name'] == '') | (df['email'] == '')]
+            # Check for empty required fields
+            empty_mask = df['name'].isna() | df['email'].isna() | (df['name'] == '') | (df['email'] == '')
+            invalid_rows = df[empty_mask]
             if not invalid_rows.empty:
-                invalid_row_nums = invalid_rows.index.tolist()
+                error_msg = f'Empty required fields in rows: {invalid_rows.index.tolist()}'
+                self.logger.error("CSV validation failed", extra={
+                    'error': error_msg,
+                    'batch': self.config.batch
+                })
                 return {
                     'status': 'failed',
-                    'error': f'Invalid data in rows {invalid_row_nums}: name or email is empty',
+                    'error': error_msg,
                     'error_type': 'VALIDATION_ERROR',
                     'batch': self.config.batch,
                     'total_processed': 0,
@@ -289,12 +316,11 @@ class BatchService:
             return df
             
         except Exception as e:
-            logger.error("Error reading CSV file", extra={
+            self.logger.error("Failed to read CSV file", extra={
                 'error': str(e),
-                'traceback': traceback.format_exc(),
-                'batch_id': self.config.batch
+                'batch': self.config.batch
             })
-            raise
+            return self._create_error_response(e)
 
     def _process_row_data(self, row_data: Dict) -> Dict:
         """Process and clean row data"""
@@ -302,11 +328,8 @@ class BatchService:
             'name': str(row_data.get('name', '')).strip(),
             'email': str(row_data.get('email', '')).strip().lower()
         }
-        #process password
-        if self.config.is_mock:
-            processed['password'] = "10@Academy"
-        else:
-            processed['password'] = generate_secure_password()
+
+        # processed['password'] = generate_secure_password()
         # Process optional fields
         optional_fields = [
             'nationality', 'gender', 'date_of_birth', 
@@ -413,7 +436,9 @@ class BatchService:
                 try:
                     # Prepare error details for failed trainees
                     error_details = []
-                    for trainee in results.get('failed_trainees', []):
+                    failed_trainees = results.get('failed_trainees', [])
+                    
+                    for trainee in failed_trainees:
                         error_details.append({
                             'email': trainee.get('email', 'Unknown'),
                             'name': trainee.get('name', 'Unknown'),
@@ -422,7 +447,9 @@ class BatchService:
                     
                     # Prepare successful trainee details with credentials if mock mode
                     successful_details = []
-                    for trainee in results.get('successful_trainees', []):
+                    successful_trainees = results.get('successful_trainees', [])
+                    
+                    for trainee in successful_trainees:
                         trainee_info = {
                             'email': trainee.get('email', 'Unknown'),
                             'name': trainee.get('name', 'Unknown'),
@@ -435,27 +462,31 @@ class BatchService:
                             }
                         successful_details.append(trainee_info)
                     
-                    # Send summary email
-                    await self.email_service.send_batch_summary_email(
-                        admin_email=self.config.admin_email,
-                        batch_id=self.config.batch,
-                        total=results.get('total_processed', 0),
-                        successful=results.get('successful', 0),
-                        failed=results.get('failed', 0),
-                        error_details=error_details,
-                        successful_details=successful_details,
-                        is_mock=self.config.is_mock
-                    )
+                    # Create the processing status detail with the correct structure
+                    processing_status_detail = {
+                        "admin_email": self.config.admin_email,
+                        "batch_id": self.config.batch,
+                        "total": results.get('total_processed', 0),
+                        "successful": results.get('successful', 0),
+                        "failed": results.get('failed', 0),
+                        "error_details": error_details,
+                        "successful_details": successful_details,
+                        "is_mock": self.config.is_mock,
+                        "successful_trainees": successful_trainees,
+                        "failed_trainees": failed_trainees
+                    }
                     
-                    # Create and send CSV email
+                    # Create and send CSV email with the correct structure
                     csv_content = self._create_summary_csv(
-                        results.get('successful_trainees', []),
-                        results.get('failed_trainees', [])
+                        successful_details,
+                        error_details
                     )
                     
+                    #Send the email with the properly structured data
                     await self.email_service.send_batch_csv_email(
                         admin_email=self.config.admin_email,
                         batch_id=self.config.batch,
+                        results=processing_status_detail,
                         csv_content=csv_content
                     )
                     
@@ -633,51 +664,52 @@ class BatchService:
         
         return csv_content.encode('utf-8')
 
-    async def _send_summary_email(self, successful_trainees: List[Dict], failed_trainees: List[Dict]):
-        """Send summary email with CSV attachment"""
-        if not self.config.admin_email:
-            logger.warning("No admin email provided for summary")
-            return
+    ####### Un used code #######
+    # async def _send_summary_email(self, successful_trainees: List[Dict], failed_trainees: List[Dict]):
+    #     """Send summary email with CSV attachment"""
+    #     if not self.config.admin_email:
+    #         logger.warning("No admin email provided for summary")
+    #         return
 
-        try:
-            # Create CSV attachment
-            csv_content = self._create_summary_csv(successful_trainees, failed_trainees)
+    #     try:
+    #         # Create CSV attachment
+    #         csv_content = self._create_summary_csv(successful_trainees, failed_trainees)
             
-            # Prepare email content
-            subject = f"Batch Processing Summary - {'Mock' if self.config.is_mock else 'Real'} Users"
-            body = f"""
-            Batch Processing Summary:
+    #         # Prepare email content
+    #         subject = f"Batch Processing Summary - {'Mock' if self.config.is_mock else 'Real'} Users"
+    #         body = f"""
+    #         Batch Processing Summary:
             
-            Total Processed: {len(successful_trainees) + len(failed_trainees)}
-            Successful: {len(successful_trainees)}
-            Failed: {len(failed_trainees)}
+    #         Total Processed: {len(successful_trainees) + len(failed_trainees)}
+    #         Successful: {len(successful_trainees)}
+    #         Failed: {len(failed_trainees)}
             
-            Please find the detailed summary in the attached CSV file.
-            """
+    #         Please find the detailed summary in the attached CSV file.
+    #         """
             
-            # Send email with attachment
-            await self.email_service.send_email_with_attachment(
-                to_email=self.config.admin_email,
-                subject=subject,
-                body=body,
-                attachment_name="batch_summary.csv",
-                attachment_content=csv_content
-            )
+    #         # Send email with attachment
+    #         await self.email_service.send_email_with_attachment(
+    #             to_email=self.config.admin_email,
+    #             subject=subject,
+    #             body=body,
+    #             attachment_name="batch_summary.csv",
+    #             attachment_content=csv_content
+    #         )
             
-            logger.info(
-                "Batch summary email sent",
-                extra={
-                    'notification_type': 'batch_summary',
-                    'receiver': self.config.admin_email,
-                    'status': 'delivered'
-                }
-            )
-        except Exception as e:
-            logger.error(
-                "Failed to send batch summary email",
-                extra={
-                    'notification_type': 'batch_summary',
-                    'receiver': self.config.admin_email,
-                    'error': str(e)
-                }
-            )
+    #         logger.info(
+    #             "Batch summary email sent",
+    #             extra={
+    #                 'notification_type': 'batch_summary',
+    #                 'receiver': self.config.admin_email,
+    #                 'status': 'delivered'
+    #             }
+    #         )
+    #     except Exception as e:
+    #         logger.error(
+    #             "Failed to send batch summary email",
+    #             extra={
+    #                 'notification_type': 'batch_summary',
+    #                 'receiver': self.config.admin_email,
+    #                 'error': str(e)
+    #             }
+    #         )
