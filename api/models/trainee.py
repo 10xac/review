@@ -185,14 +185,14 @@ class TraineeResponse(BaseModel):
 # Separate base config for batch processing
 class BatchConfig(BaseModel):
     run_stage: str
-    batch: Optional[int] = None   # Using batch instead of batch_id to match API
+    batch: Optional[str] = ""  # Using batch instead of batch_id to match API
     role: str = "trainee"
     is_mock: bool = False
     group_id: Optional[str] = None
     delimiter: str = ","
     encoding: str = "utf-8"
     chunk_size: int = 20
-    login_url: str = "https://tenxdev.com/login"  # Default login URL for trainee welcome emails
+    login_url: str  # Login URL will be set from request origin
     admin_email: Optional[str] = None  # Email address for admin notifications
     callback_url: Optional[str] = None  # URL for webhook callbacks
     webhook_secret: Optional[str] = None  # Secret for webhook signatures
@@ -202,8 +202,8 @@ class BatchConfig(BaseModel):
     required_columns: list[str] = [
         "name", "email"
     ]
-    password_option: str = "default"  # Options: "default", "provided", "auto"
-    default_password: Optional[str] = "10@Academy"  # Used when password_option is "default"
+
+    default_password: Optional[str] = "10$Academy"  # Used when password_option is "default"
 
 class BatchTraineeCreate(BaseModel):
     config: BatchConfig

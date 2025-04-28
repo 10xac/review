@@ -38,13 +38,13 @@ class TraineeController:
                 
                 login_url = trainee.config.login_url or f"https://{trainee.config.run_stage}.10academy.org/login"
                 
-                background_tasks.add_task(
-                    self._send_welcome_email,
-                    trainee.trainee.email,
-                    trainee.trainee.name,
-                    trainee.trainee.password,
-                    login_url
-                )
+                # background_tasks.add_task(
+                #     self._send_welcome_email,
+                #     trainee.trainee.email,
+                #     trainee.trainee.name,
+                #     trainee.trainee.password,
+                #     login_url
+                # )
             
             return TraineeResponse(**result)
         except Exception as e:
