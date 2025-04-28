@@ -202,8 +202,8 @@ class BatchConfig(BaseModel):
     required_columns: list[str] = [
         "name", "email"
     ]
-
-    default_password: Optional[str] = "10$Academy"  # Used when password_option is "default"
+    password_option: str = "default"  # Options: "default", "provided", "auto"
+    default_password: Optional[str] = "10@Academy"  # Used when password_option is "default"
 
 class BatchTraineeCreate(BaseModel):
     config: BatchConfig

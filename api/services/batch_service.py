@@ -39,7 +39,6 @@ class BatchService:
         # Initialize email service
         self.sender_email = "train@10academy.org"
         self.email_service = None
-        
         if self.config.admin_email:
             try:
                 self.email_service = EmailService(source_email=self.sender_email)
@@ -149,7 +148,7 @@ class BatchService:
                             'email': row.get('email', 'Unknown'),
                             'status': 'Failed',
                             'error_type': result.get('error_type', 'PROCESSING_ERROR'),
-                            'error_message': result.get('error_message', 'Unknown error')
+                            'error_message': result.get('error_message', 'Email or Username already exists')
                         })
                 except Exception as e:
                     self.logger.error("Error processing trainee record", extra={
@@ -184,9 +183,6 @@ class BatchService:
             if not processed_data['name'] or not processed_data['email']:
                 raise ValueError("Name and email are required fields")
             
-
-            password = processed_data['password']
-            
             
             # Create trainee
             trainee_create = TraineeCreate(
@@ -201,7 +197,7 @@ class BatchService:
                 trainee=TraineeInfo(**{
                     'name': processed_data['name'],
                     'email': processed_data['email'],
-                    'password': password,
+                    'password': processed_data['password'],
                     'status': processed_data.get('status', 'Accepted'),
                     'nationality': processed_data.get('nationality', ''),
                     'gender': processed_data.get('gender', ''),
@@ -231,17 +227,17 @@ class BatchService:
                 return {
                     'name': processed_data['name'],
                     'email': processed_data['email'],
-                    'password': password if self.config.is_mock else None,
+                    'password': processed_data['password'] if self.config.is_mock else None,
                     'status': 'Success'
                 }
             else:
                 return {
                     'name': processed_data['name'],
                     'email': processed_data['email'],
-                    'password': password if self.config.is_mock else None,
+                    'password': processed_data['password'] if self.config.is_mock else None,
                     'status': 'Failed',
                     'error_type': result.get('error', {}).get('error_type', 'PROCESSING_ERROR'),
-                    'error_message': result.get('error', {}).get('error_message', 'Unknown error')
+                    'error_message': result.get('error', {}).get('error_message', 'Email or Username already exists')
                 }
         except Exception as e:
             return {
@@ -252,12 +248,11 @@ class BatchService:
                 'error_type': 'PROCESSING_ERROR',
                 'error_message': str(e)
             }
-# Not used anymore
+
     # def _generate_password(self, email: str) -> str:
     #     """Generate password based on config options"""
-    #     print ("self.config.password_option",self.config.password_option)
     #     if self.config.password_option == "default":
-    #         return self.config.default_password or "10$academy"
+    #         return self.config.default_password or "10academy"
     #     elif self.config.password_option == "auto":
     #         return str(uuid.uuid4())[:8]  # Generate random 8-character password
     #     else:  # "provided"
@@ -328,8 +323,14 @@ class BatchService:
             'name': str(row_data.get('name', '')).strip(),
             'email': str(row_data.get('email', '')).strip().lower()
         }
-
-        # processed['password'] = generate_secure_password()
+        
+        # Handle password: use from CSV if provided, otherwise use email
+        csv_password = row_data.get('password')
+        if csv_password and not pd.isna(csv_password):
+            processed['password'] = str(csv_password).strip()
+        else:
+            processed['password'] = processed['email']  # Use email as password if no password provided
+        
         # Process optional fields
         optional_fields = [
             'nationality', 'gender', 'date_of_birth', 
@@ -482,7 +483,7 @@ class BatchService:
                         error_details
                     )
                     
-                    #Send the email with the properly structured data
+                    # Send the email with the properly structured data
                     await self.email_service.send_batch_csv_email(
                         admin_email=self.config.admin_email,
                         batch_id=self.config.batch,
@@ -648,14 +649,14 @@ class BatchService:
                     trainee.get('email', ''),
                     trainee.get('password', ''),
                     "Failed",
-                    trainee.get('error_message', 'Unknown error')
+                    trainee.get('error_message', 'Email or Username already exists')
                 ])
             else:
                 writer.writerow([
                     trainee.get('name', ''),
                     trainee.get('email', ''),
                     "Failed",
-                    trainee.get('error_message', 'Unknown error')
+                    trainee.get('error_message', 'Email or Username already exists')
                 ])
         
         # Get the CSV content and encode it
@@ -664,52 +665,4 @@ class BatchService:
         
         return csv_content.encode('utf-8')
 
-    ####### Un used code #######
-    # async def _send_summary_email(self, successful_trainees: List[Dict], failed_trainees: List[Dict]):
-    #     """Send summary email with CSV attachment"""
-    #     if not self.config.admin_email:
-    #         logger.warning("No admin email provided for summary")
-    #         return
-
-    #     try:
-    #         # Create CSV attachment
-    #         csv_content = self._create_summary_csv(successful_trainees, failed_trainees)
-            
-    #         # Prepare email content
-    #         subject = f"Batch Processing Summary - {'Mock' if self.config.is_mock else 'Real'} Users"
-    #         body = f"""
-    #         Batch Processing Summary:
-            
-    #         Total Processed: {len(successful_trainees) + len(failed_trainees)}
-    #         Successful: {len(successful_trainees)}
-    #         Failed: {len(failed_trainees)}
-            
-    #         Please find the detailed summary in the attached CSV file.
-    #         """
-            
-    #         # Send email with attachment
-    #         await self.email_service.send_email_with_attachment(
-    #             to_email=self.config.admin_email,
-    #             subject=subject,
-    #             body=body,
-    #             attachment_name="batch_summary.csv",
-    #             attachment_content=csv_content
-    #         )
-            
-    #         logger.info(
-    #             "Batch summary email sent",
-    #             extra={
-    #                 'notification_type': 'batch_summary',
-    #                 'receiver': self.config.admin_email,
-    #                 'status': 'delivered'
-    #             }
-    #         )
-    #     except Exception as e:
-    #         logger.error(
-    #             "Failed to send batch summary email",
-    #             extra={
-    #                 'notification_type': 'batch_summary',
-    #                 'receiver': self.config.admin_email,
-    #                 'error': str(e)
-    #             }
-    #         )
+    

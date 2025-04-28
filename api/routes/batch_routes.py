@@ -24,7 +24,6 @@ async def process_batch(
     chunk_size: int = Form(20),
     is_mock: bool = Form(False),
     login_url: Optional[str] = Form(None),
-   
     current_user: Dict = Depends(verify_admin_access)
 ):
     """
@@ -46,6 +45,11 @@ async def process_batch(
     """
     
     try:
+        print("\n=== Batch Processing Request ===")
+        print(f"User: {current_user['email']}")
+        print(f"Batch: {batch}")
+        print(f"File: {file.filename}")
+        
         # Validate file
         if not file.filename:
             return BatchProcessingResponse.error_response(
@@ -98,7 +102,6 @@ async def process_batch(
                 chunk_size=chunk_size,
                 login_url=actual_login_url,
                 admin_email=admin_email
-
             )
             
         except Exception as config_error:
