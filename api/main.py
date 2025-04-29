@@ -15,7 +15,7 @@ app.add_exception_handler(ValidationError, pydantic_validation_exception_handler
 # CORS Settings
 ALLOWED_ORIGINS: List[str] = [
      "http://localhost:3000",  
-    # "http://localhost:8008",
+    "https://simulation-tenx.10academy.org",
     # "http://127.0.0.1:8009",
     # "http://127.0.0.1:8008",
     "https://tenx.gettenacious.com",
