@@ -95,6 +95,7 @@ class DataProcessor:
             if self.config.batch is None or self.config.batch == "":
                 processed_data['batch_id'] = []
             else:
+                print("batch_id", [self.config.batch])
                 processed_data['batch_id'] = [self.config.batch]
 
             # Handle groups
@@ -108,6 +109,21 @@ class DataProcessor:
             missing_fields = [field for field in required_fields if not processed_data.get(field)]
             if missing_fields:
                 raise ValueError(f"Missing required fields: {', '.join(missing_fields)}")
+            
+            
+            ## aditional fileds for profile optional fields
+            processed_data['bio'] = getattr(trainee_data, 'bio', '')
+            processed_data['city_of_residence'] = getattr(trainee_data, 'city_of_residence', '')
+            other_info = getattr(trainee_data, 'other_info', {})
+            if isinstance(other_info, dict):
+                # Remove any additionalProp fields that are default/empty
+                other_info = {k:v for k,v in other_info.items() 
+                            if not k.startswith('additionalProp') or 
+                            (isinstance(v, dict) and v)}
+                processed_data['other_info'] = other_info
+            else:
+                processed_data['other_info'] = {}
+            
 
             return processed_data
             

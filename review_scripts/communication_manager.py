@@ -52,12 +52,13 @@ class CommunicationManager:
 
                     """
         variables =  {"email": all_user_data['email'],"name":all_user_data['name'],
-                        #"batch":all_user_data['batch'],
+               
                         "userId": all_user_data['userId'], 
                         "role":all_user_data['role'],
                         "batchId": all_user_data['batchId'],
                         "groups": all_user_data['groups']
                         }
+
         result_json = sg.Select_from_table(query=query, variables= variables)
         return result_json
     def read_all_users(self,sg, req_params):
@@ -239,15 +240,7 @@ class CommunicationManager:
         batchJson = sg.Select_from_table(query=bquery, variables={"batch": batch})
         return batchJson
     
-    # @@@@@ profile_data    {'first_name': 'Testapi', 
-    #                        'last_name': 'First', 
-    #                        'email': 'test@example.com', 
-    #                        'nationality': 'Ethiopia',
-    #                         'gender': 'Female', 
-    #                         'date_of_birth': datetime.date(2025, 3, 31), 
-    #                         'all_user': '2285', 'other_info': {'vulnerable': ''}, 
-    #                         'bio': None, 
-    #                         'city_of_residence': None}
+   
     def insert_profile_information(self, sg, row):
         query = """mutation createProfileInformation(
             $firstName: String
@@ -287,7 +280,7 @@ class CommunicationManager:
                                                                         "surName": row['last_name'],
                                                                         "nationality": row["nationality"],
                                                                         "gender": row["gender"],
-                                                                        "alluser": row["all_user"],
+                                                                        "all_user": row["all_user"],
                                                                         "email": row["email"],
                                                                         "other_info": row["other_info"],
                                                                         "date_of_birth": row["date_of_birth"],
