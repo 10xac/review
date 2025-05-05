@@ -43,16 +43,7 @@ async def create_trainee_route(
         }
     }
     """
-    # print("Trainee data:", trainee)
-    # print("Current user:", current_user)
-    # # Verify admin access after getting the trainee data
-    # if current_user.get("role") not in ["Authenticated", "Staff"]:
-    #     return TraineeResponse.error_response(
-    #         error_type="AUTH_ERROR",
-    #         error_message="Insufficient permissions. Admin access required.",
-    #         error_location="trainee_creation",
-    #         error_data={"user_role": current_user.get("role")}
-    #     )
+ 
     
     return await controller.create_trainee_controller(trainee)
 
@@ -89,5 +80,14 @@ async def create_admin_trainee_route(
         }
     }
     """
+    # Check if current_user is an error response
+    if isinstance(current_user, dict) and "success" in current_user and not current_user["success"]:
+        return TraineeResponse.error_response(
+            error_type=current_user["error"]["error_type"],
+            error_message=current_user["error"]["error_message"],
+            error_location=current_user["error"]["error_location"],
+            error_data=current_user["error"]["error_data"]
+        )
+
     return await controller.create_admin_trainee_controller(trainee, background_tasks)
 

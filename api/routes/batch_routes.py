@@ -45,6 +45,15 @@ async def process_batch(
     """
     
     try:
+        # Check if current_user is an error response
+        if isinstance(current_user, dict) and "success" in current_user and not current_user["success"]:
+            return BatchProcessingResponse.error_response(
+                error_type=current_user["error"]["error_type"],
+                error_message=current_user["error"]["error_message"],
+                error_location=current_user["error"]["error_location"],
+                error_data=current_user["error"]["error_data"]
+            )
+
         print("\n=== Batch Processing Request ===")
         print(f"User: {current_user['email']}")
         print(f"Batch: {batch}")

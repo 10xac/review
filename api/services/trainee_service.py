@@ -14,6 +14,8 @@ class TraineeService:
     def __init__(self, data: TraineeCreate):
         self.trainee_data = data.trainee
         self.config = data.config
+        # add essential data from config to trainee_data
+       
         self.sg = StrapiGraphql(run_stage=self.config.run_stage)
         self.sm = StrapiMethods(run_stage=self.config.run_stage)
         self.cm = CommunicationManager()
@@ -84,9 +86,9 @@ class TraineeService:
                 json=user_var,
                 headers={"Content-Type": "application/json"}
             )
-            print("response...", response.json())
+         
             # Check if the request was successful
-            print("response...", response.json())
+        
             if response.status_code == 200:
                 return response.json()
             else:
@@ -140,17 +142,19 @@ class TraineeService:
         
         try:
             # Create alluser 
-          
+            groups = [user_data["groups"]] if len(user_data["groups"]) > 0 else []
             alluser_data = {
                 "name": user_data["name"],
                 "email": user_data["email"],
                 "role": user_data["role"],
                 "userId": user_id,
-                "batchId": user_data["batch_id"],
-                "groups": user_data["groups"]
+                "batchId": [user_data["batch_id"]],
+                "groups": groups
             }
+            print("alluser_data...", alluser_data)
             alluser_result = self.cm.insert_all_users(self.sg, alluser_data)
             alluser_id = alluser_result['data']['createAllUser']['data']['id']
+            print("alluser_id...", alluser_id)
             self.created_resources['alluser_id'] = alluser_id
             return user_id, alluser_id
 
@@ -203,6 +207,8 @@ class TraineeService:
             print("trainee data ", self.trainee_data)
             processed_data = self.data_processor.process_single_trainee(self.trainee_data)
             processed_data['is_mock'] = self.config.is_mock
+            processed_data['batch_id'] = self.config.batch if self.config.batch else []
+            processed_data['groups'] = self.config.group_id if self.config.group_id else []
             # Split name into first and last name
             name_parts = processed_data['name'].split()
             first_name = name_parts[0]
@@ -241,6 +247,7 @@ class TraineeService:
                 "bio": processed_data.get('bio', ''),
                 "city_of_residence": processed_data.get('city_of_residence', '')
             }
+            print("profile_data...", profile_data)
             profile_result = self._insert_profile(profile_data)
             if isinstance(profile_result, dict) and 'error' in profile_result:
                 return profile_result

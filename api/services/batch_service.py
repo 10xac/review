@@ -354,7 +354,7 @@ class BatchService:
                           'vulnerable', 'bio', 'city_of_residence', 'role', 'is_mock',
                           'batch_id', 'groups', 'status']
         processed['other_info'] = {
-            k: v for k, v in processed.items() 
+            k: v for k, v in row_data.items() 
             if k not in essential_fields
         }
         
