@@ -69,7 +69,7 @@ class TraineeService:
             user_name = user_data['name']+"_"+ user_data['email']
             user_var = {"username": user_name, "email": user_data['email'], "password": user_data['password']}
             # Validate required fields
-            print("user_data...", user_var)
+            print("unconfirmed user_data...", user_var)
             required_fields = ['username', 'email', 'password']
             missing_fields = [field for field in required_fields if not user_var.get(field)]
             if missing_fields:
@@ -79,14 +79,20 @@ class TraineeService:
                     error_location="user_creation",
                     error_data={"missing_fields": missing_fields}
                 )
+            
             request_link = self.sm.apiroot + "/api/auth/local/register"
+            
+            print("rest Request link", request_link) 
             # Make the request to create user
             response = requests.post(
                 request_link,
                 json=user_var,
-                headers={"Content-Type": "application/json"}
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {self.sm.token}"
+                }
             )
-         
+            print("unconfirmed response...", response)
             # Check if the request was successful
         
             if response.status_code == 200:
@@ -148,7 +154,7 @@ class TraineeService:
                 "email": user_data["email"],
                 "role": user_data["role"],
                 "userId": user_id,
-                "batchId": [user_data["batch_id"]],
+                "batchId": user_data["batch_id"],
                 "groups": groups
             }
             print("alluser_data...", alluser_data)

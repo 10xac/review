@@ -25,19 +25,36 @@ async def get_current_user(
         credentials: The JWT token credentials
     """
     token = credentials.credentials
-
+    # Print request details for debugging
+    print("\n=== Request Details ===")
+    print(f"Method: {request.method}")
+    print(f"URL: {request.url}")
+    print("\nHeaders:")
+    for name, value in request.headers.items():
+        print(f"  {name}: {value}")
     
-    # Get run_stage from request body
+    print("\nQuery Parameters:")
+    for name, value in request.query_params.items():
+        print(f"  {name}: {value}")
+
+    # First check content type
+    content_type = request.headers.get("content-type", "")
+    print(f"\nContent-Type: {content_type}")
+    
     try:
-        form_data = await request.form()
-        run_stage = form_data.get("run_stage", "dev")
+        if "multipart/form-data" in content_type:
+            form_data = await request.form()
+            run_stage = form_data.get("run_stage")
+        else:
+            # For JSON and other content types
+            json_data = await request.json()
+            run_stage = json_data.get("config", {}).get("run_stage")
     except:
-        run_stage = "prod"  # Default to prod if can't get from request
+        run_stage = "dev"  # Default to dev if can't get from request
     
     sg = StrapiGraphql(run_stage=run_stage)
     strapi_url = sg.apiroot
     logger.info("Used Strapi URL.....: %s", strapi_url)
-
 
     headers = {
         "Authorization": f"Bearer {token}",
@@ -51,6 +68,7 @@ async def get_current_user(
             response = await client.post(strapi_url, headers=headers, json={"query": auth_query})
             if response.status_code == 200:
                 auth_data = response.json()
+                
                 print("Authentication response:", auth_data)
                 
                 if auth_data and "data" in auth_data and "me" in auth_data["data"]:
