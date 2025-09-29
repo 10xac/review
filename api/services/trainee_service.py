@@ -83,6 +83,8 @@ class TraineeService:
             request_link = self.sm.apiroot + "/api/auth/local/register"
             
             print("rest Request link", request_link) 
+            print("user_var", user_var)
+            print("token", self.sm.token)
             # Make the request to create user
             response = requests.post(
                 request_link,

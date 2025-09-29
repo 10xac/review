@@ -21,8 +21,9 @@ class CommunicationManager:
         username = user_data['name']+"_"+ user_data['email']
 
         variables = {"username": username, "email":user_data['email'], "password":user_data['password']}
-        print("variables.....",variables)
+        print("user data variables.....",variables)
         result_json = sg.Select_from_table(query=query, variables= variables)
+        print("user data result json.....",result_json)
         return result_json
     
     def insert_all_users(self,sg, all_user_data):  
@@ -60,6 +61,7 @@ class CommunicationManager:
                         }
 
         result_json = sg.Select_from_table(query=query, variables= variables)
+        print("all user data result json.....",result_json)
         return result_json
     def read_all_users(self,sg, req_params):
         query = """ query getAllUser($batch:Int,$role:String){
