@@ -1,0 +1,9 @@
+__pycache__/
+.ipynb_checkpoints
+.env
+tobedeleted
+*.csv
+.env/
+# add venv to the ignore list
+review/
+

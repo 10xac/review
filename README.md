@@ -6,7 +6,8 @@
 - Process the application information by converting the question with the question mapper function to update batch dependent questions.
 - Create Review category, Reviewer and alluser 
 - To insert review assign the Review Category and the reviewers id to that specific review 
-- To switch between enviroment Like dev,stage, and production. Instailze Insert_alluser.py by one of this params  {'dev-cms','stage-cms', 'cms'}
+- To switch between enviroment Like dev,stage, and production. Instailze Insert_alluser.py by one of this params  {'dev-cms','stage-cms', 'cms', u2j}
+- 
 
 ### How to use and contribute
 
@@ -15,7 +16,6 @@
 #### To use repository
 
 Assuming that you are working in Project directory
-
 
 `git clone https://github.com/10xac/review.git`
 `git checkout main`
@@ -26,3 +26,9 @@ Assuming that you are working in Project directory
 
 `git checkout main`
 `git checkout -b R-Branch name`
+
+
+
+#### Instruction to  assist 
+- 
+- Use run_config to pass parameters  

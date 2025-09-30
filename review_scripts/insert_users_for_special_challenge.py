@@ -6,24 +6,17 @@ import datetime
 import re
 import numpy as np
 import pandas as pd
-curdir = os.path.dirname(os.path.realpath(__file__))
-print(curdir)
-cpath = os.path.dirname(curdir)
-if not cpath in sys.path:
-    sys.path.append(cpath)
-
-
+#
 from review_scripts.strapi_graphql import StrapiGraphql
 from review_scripts.strapi_methods import StrapiMethods
 
 from review_scripts.gdrive import gsheet
 
 class InsertUserSpecial_challenge:
-    def __init__(self, root="stage-cms", ssmkey="staging/strapi/token", batch= None, role="trainee") -> None:
-        self.root = root
-        self.ssmkey = ssmkey
-        self.sg = StrapiGraphql(root = self.root, ssmkey=self.ssmkey)
-        self.sm = StrapiMethods(root = self.root, ssmkey=self.ssmkey)
+    def __init__(self, run_stage = "dev-cms", batch= None, role="trainee") -> None:
+
+        self.sg = StrapiGraphql(run_stage)
+        self.sm = StrapiMethods(run_stage)
         
         self.batch = batch
         self.role = role

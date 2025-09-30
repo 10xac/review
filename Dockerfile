@@ -1,26 +1,27 @@
-FROM python:3.6.13-buster
+FROM python:3.9-slim
 
 WORKDIR /app
 
-COPY requirements.txt requirements.txt
-RUN pip3 install -r requirements.txt
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    python3-dev \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
 
-COPY . .
+# Copy application code
+COPY api/ api/
+COPY utils/ utils/
+COPY review_scripts/ review_scripts/
+COPY api/requirements.txt start.sh ./
 
-EXPOSE 80
+# Make start script executable
+RUN chmod +x start.sh
 
-RUN mkdir -p /root/.streamlit
+# Install Python dependencies
+RUN pip install --no-cache-dir -r api/requirements.txt
 
-RUN bash -c 'echo -e "\
-[general]\n\
-email = \"\"\n\
-" > /root/.streamlit/credentials.toml'
+# Expose port
+EXPOSE 8000
 
-RUN bash -c 'mv ./config.toml /root/.streamlit/config.toml'
-RUN python3 gencred.py
-
-ENTRYPOINT [ "streamlit", "run", "b5_review_prod.py", \
-    "--server.port", "80", \
-    "--server.enableCORS", "true", \
-    "--browser.serverAddress", "0.0.0.0", \
-    "--browser.serverPort", "443"]
+# Run the application
+CMD ["./start.sh"] 
