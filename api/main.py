@@ -13,21 +13,19 @@ app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.add_exception_handler(ValidationError, pydantic_validation_exception_handler)
 
 # CORS Settings
-ALLOWED_ORIGINS: List[str] = [
-     "http://localhost:3000",  
-    "https://simulation-tenx.10academy.org",
-    # "http://127.0.0.1:8009",
-    # "http://127.0.0.1:8008",
-    "https://tenx.gettenacious.com",
-    "https://tenx.10academy.org", 
-    "https://dev-tenx.10academy.org",
-    "https://kaimtenx.10academy.org"
+# Additional allowed origins (for localhost development)
+ADDITIONAL_ALLOWED_ORIGINS: List[str] = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000"
 ]
     
-# Configure CORS
+# Configure CORS with regex pattern to allow any subdomain of specified domains
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS, 
+    allow_origin_regex=r"^https?://([\w\-]+\.)*?(10academy\.org|gettenacious\.com)(:\d+)?$",
+    allow_origins=ADDITIONAL_ALLOWED_ORIGINS,  # Explicit localhost origins
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

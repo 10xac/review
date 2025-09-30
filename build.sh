@@ -15,7 +15,7 @@ docker-compose build
 docker-compose up -d
 
 echo "Application is now running!"
-echo "Backend API available at: http://localhost:5080"
+echo "Backend API available at: https://user-management.10academy.org/"
 echo ""
 echo "To view logs: docker-compose logs -f"
 echo "To stop the application: docker-compose down" 
